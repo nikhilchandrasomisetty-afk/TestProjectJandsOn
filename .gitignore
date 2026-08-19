@@ -1,3 +1,7 @@
+node_modules/
+.DS_Store
+*.log
+
 target/
 pom.xml.tag
 pom.xml.releaseBackup

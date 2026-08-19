@@ -1,0 +1,14 @@
+{
+  "name": "voxelcraft",
+  "version": "1.0.0",
+  "description": "A browser voxel sandbox game: infinite procedural terrain, block breaking and placing, day/night cycle.",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js 8080"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "license": "MIT"
+}
