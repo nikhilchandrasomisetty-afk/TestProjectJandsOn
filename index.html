@@ -205,6 +205,21 @@
       }
       #loading[hidden] { display: none; }
 
+      #drag-hint {
+        position: fixed;
+        left: 50%;
+        bottom: 84px;
+        transform: translateX(-50%);
+        padding: 7px 13px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        font-size: 11.5px;
+        color: var(--muted);
+        z-index: 4;
+      }
+      #drag-hint[hidden] { display: none; }
+
       #underwater {
         position: fixed;
         inset: 0;
@@ -227,6 +242,7 @@
 
     <div id="underwater"></div>
     <div id="loading" hidden>Generating world…</div>
+    <div id="drag-hint" hidden>Drag to look around · click to break · right-click to place</div>
 
     <div class="overlay" id="menu">
       <div class="panel">

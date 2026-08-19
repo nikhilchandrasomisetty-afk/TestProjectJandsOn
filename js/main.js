@@ -58,6 +58,7 @@ const ui = {
   seedInput: document.getElementById('seed-input'),
   saveInfo: document.getElementById('save-info'),
   targetSlot: document.getElementById('target-slot'),
+  dragHint: document.getElementById('drag-hint'),
 };
 
 const input = {
@@ -80,6 +81,7 @@ const state = {
   paused: true,
   breakCooldown: 0,
   placeCooldown: 0,
+  dragLook: false,
 };
 
 let world = null;
@@ -154,7 +156,21 @@ function loadSave() {
   }
 }
 
+function storageAvailable() {
+  try {
+    localStorage.getItem(SAVE_KEY);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function updateSaveInfo() {
+  if (!storageAvailable()) {
+    ui.saveInfo.textContent =
+      'Saving is unavailable here — this page can’t use browser storage, so your world lasts only until you close the tab.';
+    return;
+  }
   const save = loadSave();
   const edits = save ? Object.values(save.edits ?? {}).reduce((n, arr) => n + arr.length / 2, 0) : 0;
   ui.saveInfo.textContent = save
@@ -284,7 +300,7 @@ function requestPlay() {
   ui.menu.hidden = true;
   ui.inventory.hidden = true;
   state.paused = false;
-  canvas.requestPointerLock?.();
+  grabPointer();
 }
 
 function pause() {
@@ -302,20 +318,49 @@ function toggleInventory(force) {
   ui.inventory.hidden = !open;
   if (open) {
     if (isPointerLocked()) document.exitPointerLock();
-  } else if (!state.paused) {
-    canvas.requestPointerLock?.();
+  } else if (!state.paused && !state.dragLook) {
+    grabPointer();
   }
 }
 
 document.addEventListener('pointerlockchange', () => {
+  if (isPointerLocked()) state.dragLook = false;
   // Losing the pointer (Esc) pauses, unless a UI panel deliberately took it.
-  if (!isPointerLocked() && !state.paused && ui.inventory.hidden) pause();
+  else if (!state.paused && ui.inventory.hidden && !state.dragLook) pause();
 });
+
+/**
+ * Embedded pages (an iframe without allow="pointer-lock") can be refused the
+ * pointer. Rather than leaving the player unable to look around, fall back to
+ * dragging the mouse to look, where a click without drag is break/place.
+ */
+function grabPointer() {
+  const result = canvas.requestPointerLock?.();
+  if (result && typeof result.catch === 'function') result.catch(() => enableDragLook());
+  setTimeout(() => {
+    if (!isPointerLocked() && !state.paused) enableDragLook();
+  }, 350);
+}
+
+function enableDragLook() {
+  if (state.dragLook) return;
+  state.dragLook = true;
+  ui.dragHint.hidden = false;
+}
+
+let dragging = false;
+let dragDistance = 0;
 
 canvas.addEventListener('mousedown', (event) => {
   if (state.paused) return;
+
+  if (state.dragLook) {
+    dragging = true;
+    dragDistance = 0;
+    return; // the action happens on release, once we know it wasn't a drag
+  }
   if (!isPointerLocked()) {
-    canvas.requestPointerLock?.();
+    grabPointer();
     return;
   }
   if (event.button === 0) {
@@ -332,6 +377,15 @@ canvas.addEventListener('mousedown', (event) => {
 });
 
 window.addEventListener('mouseup', (event) => {
+  if (state.dragLook && dragging) {
+    dragging = false;
+    if (dragDistance < 6 && !state.paused) {
+      if (event.button === 0) breakBlock();
+      else if (event.button === 2) placeBlock();
+      else if (event.button === 1) pickBlock();
+    }
+    return;
+  }
   if (event.button === 0) input.breaking = false;
   if (event.button === 2) input.placing = false;
 });
@@ -339,14 +393,21 @@ window.addEventListener('mouseup', (event) => {
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
 document.addEventListener('mousemove', (event) => {
-  if (!isPointerLocked() || state.paused) return;
+  if (state.paused) return;
+  if (state.dragLook) {
+    if (!dragging) return;
+    dragDistance += Math.abs(event.movementX) + Math.abs(event.movementY);
+    player.look(event.movementX, event.movementY);
+    return;
+  }
+  if (!isPointerLocked()) return;
   player.look(event.movementX, event.movementY);
 });
 
 window.addEventListener(
   'wheel',
   (event) => {
-    if (state.paused || !isPointerLocked()) return;
+    if (state.paused || (!isPointerLocked() && !state.dragLook)) return;
     selectSlot(state.selected + (event.deltaY > 0 ? 1 : -1));
   },
   { passive: true }
@@ -440,7 +501,11 @@ document.getElementById('btn-new').addEventListener('click', () => {
   requestPlay();
 });
 document.getElementById('btn-reset').addEventListener('click', () => {
-  localStorage.removeItem(SAVE_KEY);
+  try {
+    localStorage.removeItem(SAVE_KEY);
+  } catch {
+    // Storage can be unavailable when the page is embedded; nothing to delete.
+  }
   updateSaveInfo();
 });
 
