@@ -1,0 +1,14 @@
+{
+  "name": "blockcraft",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A browser voxel sandbox game built with Three.js",
+  "type": "module",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "build": "node build.mjs"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0"
+  }
+}
