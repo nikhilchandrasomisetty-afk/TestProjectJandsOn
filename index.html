@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Blockcraft</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22><rect width=%2216%22 height=%2216%22 fill=%22%235da130%22/><rect y=%2210%22 width=%2216%22 height=%226%22 fill=%228a5a34%22/></svg>" />
+<style>
+  html, body { margin: 0; padding: 0; overflow: hidden; height: 100%; background: #87ceeb; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  canvas { display: block; }
+
+  #crosshair {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 20px; height: 20px; pointer-events: none; z-index: 10;
+  }
+  #crosshair::before, #crosshair::after {
+    content: ""; position: absolute; background: rgba(255,255,255,0.85);
+    box-shadow: 0 0 2px rgba(0,0,0,0.8);
+  }
+  #crosshair::before { top: 9px; left: 0; width: 20px; height: 2px; }
+  #crosshair::after { left: 9px; top: 0; width: 2px; height: 20px; }
+
+  #hotbar {
+    position: fixed; bottom: 16px; left: 50%; transform: translateX(-50%);
+    display: flex; gap: 6px; z-index: 10; background: rgba(0,0,0,0.25);
+    padding: 6px; border-radius: 8px;
+  }
+  .slot {
+    width: 48px; height: 48px; border: 2px solid rgba(255,255,255,0.4);
+    border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-size: 11px; color: #fff; text-shadow: 0 1px 2px #000;
+    background-size: cover; position: relative;
+  }
+  .slot.active { border-color: #fff; box-shadow: 0 0 8px rgba(255,255,255,0.9); }
+  .slot span { position: absolute; bottom: 2px; right: 4px; font-size: 10px; opacity: 0.8; }
+
+  #hud {
+    position: fixed; top: 12px; left: 12px; color: #fff; text-shadow: 0 1px 3px #000;
+    z-index: 10; font-size: 13px; line-height: 1.5; background: rgba(0,0,0,0.25);
+    padding: 8px 12px; border-radius: 8px; max-width: 280px;
+  }
+  #hud b { font-size: 15px; }
+
+  #overlay {
+    position: fixed; inset: 0; background: rgba(10,15,25,0.88); color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; text-align: center; cursor: pointer;
+  }
+  #overlay h1 { font-size: 42px; margin: 0 0 8px; letter-spacing: 1px; }
+  #overlay p { margin: 4px 0; opacity: 0.85; }
+  #overlay .hint { margin-top: 24px; font-size: 14px; opacity: 0.7; }
+  #overlay.hidden { display: none; }
+
+  #loading {
+    position: fixed; inset: 0; background: #0a0f19; color: #fff; z-index: 200;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+  }
+  #loading.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="loading">Generating world…</div>
+
+<div id="overlay" class="hidden">
+  <h1>⛏ Blockcraft</h1>
+  <p>Click to play</p>
+  <p>WASD to move · Mouse to look · Space to jump</p>
+  <p>Left click: break block · Right click: place block</p>
+  <p>1-6 to select block · Esc to release mouse</p>
+  <div class="hint">A tiny browser Minecraft clone — click anywhere to lock your mouse and start</div>
+</div>
+
+<div id="crosshair"></div>
+<div id="hud">
+  <b>Blockcraft</b><br/>
+  Position: <span id="pos">-</span><br/>
+  Block: <span id="lookblock">-</span>
+</div>
+<div id="hotbar"></div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three/build/three.module.min.js",
+    "three/addons/": "./vendor/three/examples/jsm/"
+  }
+}
+</script>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
