@@ -21,6 +21,15 @@ dependency-free convenience.
 
 ## Controls
 
+On phones and tablets the game shows a movement stick and **Jump**, **Fly**,
+**Break** and **Place** buttons, and you drag the world to look around. Desktop
+players can switch these on from the pause menu.
+
+On-screen controls and pointer lock are mutually exclusive: a captured mouse
+pointer delivers every event to the canvas, so the buttons would be visible but
+unclickable. Turning the controls on therefore turns pointer lock off, and
+looking around becomes drag-to-look.
+
 | Input | Action |
 | --- | --- |
 | `W` `A` `S` `D` | Move |

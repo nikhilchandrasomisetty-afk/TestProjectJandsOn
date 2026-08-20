@@ -100,11 +100,13 @@ export class Player {
     this.inWater = this.world.isLiquidAt(this.position.x, this.position.y + 0.5, this.position.z);
     const headUnderwater = this.world.isLiquidAt(this.position.x, eye, this.position.z);
 
-    // Horizontal intent in world space.
-    let forward = (input.forward ? 1 : 0) - (input.back ? 1 : 0);
-    let strafe = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-    if (forward !== 0 || strafe !== 0) {
-      const length = Math.hypot(forward, strafe);
+    // Horizontal intent in world space. Keys are on/off; the on-screen stick
+    // reports analog axes, and either source can drive the player.
+    const clamp1 = (v) => Math.max(-1, Math.min(1, v));
+    let forward = clamp1((input.forward ? 1 : 0) - (input.back ? 1 : 0) + (input.axisForward ?? 0));
+    let strafe = clamp1((input.right ? 1 : 0) - (input.left ? 1 : 0) + (input.axisStrafe ?? 0));
+    const length = Math.hypot(forward, strafe);
+    if (length > 1) {
       forward /= length;
       strafe /= length;
     }

@@ -25,7 +25,7 @@
         user-select: none;
       }
 
-      canvas { display: block; }
+      canvas { display: block; touch-action: none; }
 
       #hud {
         position: fixed;
@@ -205,11 +205,109 @@
       }
       #loading[hidden] { display: none; }
 
+      /* On-screen controls: usable by touch and mouse alike. */
+      #touch-controls {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 3;
+      }
+      #touch-controls[hidden] { display: none; }
+
+      #stick {
+        position: absolute;
+        left: 22px;
+        bottom: 22px;
+        width: 132px;
+        height: 132px;
+        border-radius: 50%;
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        background: rgba(18, 18, 22, 0.5);
+        pointer-events: auto;
+        touch-action: none;
+        display: grid;
+        place-items: center;
+      }
+      #stick-knob {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(230, 240, 250, 0.5);
+        border: 2px solid rgba(255, 255, 255, 0.5);
+        transition: background 0.15s;
+        will-change: transform;
+      }
+      #stick.active #stick-knob { background: var(--accent); }
+
+      #action-buttons {
+        position: absolute;
+        right: 20px;
+        bottom: 22px;
+        display: grid;
+        grid-template-columns: repeat(2, 82px);
+        gap: 8px;
+        pointer-events: auto;
+      }
+      .action {
+        height: 58px;
+        padding: 0;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--text);
+        background: rgba(18, 18, 22, 0.72);
+        border: 2px solid rgba(255, 255, 255, 0.22);
+        border-radius: 12px;
+        touch-action: none;
+        -webkit-user-select: none;
+        user-select: none;
+      }
+      .action.wide { grid-column: span 2; }
+      .action:active,
+      .action.held {
+        background: var(--accent);
+        color: #10240c;
+        border-color: transparent;
+      }
+      .action.on {
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+      .action[hidden] { display: block; visibility: hidden; }
+
+      /*
+       * The stick and buttons own the bottom corners, so on small screens the
+       * hotbar moves to the top and the debug readout gets out of the way.
+       */
+      @media (max-width: 900px) {
+        .slot { width: 38px; height: 38px; }
+        .slot img { width: 28px; height: 28px; }
+        #hotbar { bottom: 100px; }
+        #held-name { bottom: 156px; }
+      }
+
+      @media (max-width: 620px), (max-height: 460px) {
+        .slot { width: 30px; height: 30px; }
+        .slot img { width: 24px; height: 24px; }
+        .slot span { display: none; }
+        #hotbar { top: 8px; bottom: auto; }
+        #held-name { top: 54px; bottom: auto; }
+        #stats { display: none; }
+        #stick { width: 112px; height: 112px; left: 14px; bottom: 14px; }
+        #stick-knob { width: 48px; height: 48px; }
+        #action-buttons { right: 12px; bottom: 14px; grid-template-columns: repeat(2, 70px); gap: 6px; }
+        .action { height: 48px; font-size: 11px; }
+        #drag-hint { font-size: 10.5px; }
+      }
+
       #drag-hint {
         position: fixed;
         left: 50%;
-        bottom: 84px;
+        top: 58%;
         transform: translateX(-50%);
+        text-align: center;
+        max-width: 80vw;
         padding: 7px 13px;
         background: var(--panel);
         border: 1px solid var(--border);
@@ -240,9 +338,22 @@
       <div id="hotbar"></div>
     </div>
 
+    <div id="touch-controls" hidden>
+      <div id="stick" aria-label="Move">
+        <div id="stick-knob"></div>
+      </div>
+      <div id="action-buttons">
+        <button type="button" id="btn-fly" class="action">Fly</button>
+        <button type="button" id="btn-down" class="action" hidden>Down</button>
+        <button type="button" id="btn-place" class="action">Place</button>
+        <button type="button" id="btn-jump" class="action">Jump</button>
+        <button type="button" id="btn-break" class="action wide">Break</button>
+      </div>
+    </div>
+
     <div id="underwater"></div>
     <div id="loading" hidden>Generating world…</div>
-    <div id="drag-hint" hidden>Drag to look around · click to break · right-click to place</div>
+    <div id="drag-hint" hidden>Drag the view to look around · use the on-screen buttons to move, jump and build</div>
 
     <div class="overlay" id="menu">
       <div class="panel">
@@ -256,6 +367,10 @@
         </div>
 
         <h2>Controls</h2>
+        <p>
+          On a phone or tablet, use the on-screen stick and buttons, and drag the
+          world to look around. Keyboard and mouse work too:
+        </p>
         <table class="keys">
           <tr><td>W A S D</td><td>Move</td></tr>
           <tr><td>Mouse</td><td>Look around</td></tr>
@@ -274,9 +389,15 @@
 
         <div class="row" style="margin-top: 20px">
           <button class="primary" id="btn-play">Play</button>
+          <button id="btn-controls">On-screen controls: off</button>
           <button id="btn-save">Save</button>
           <button id="btn-reset">Delete Save</button>
         </div>
+        <p class="hint">
+          On-screen controls give you a movement stick and Jump, Fly, Break and
+          Place buttons. They replace mouse-look with drag-to-look, because a
+          captured mouse pointer can’t reach the buttons.
+        </p>
         <p class="hint" id="save-info"></p>
       </div>
     </div>

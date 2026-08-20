@@ -71,7 +71,13 @@ const input = {
   sprint: false,
   breaking: false,
   placing: false,
+  axisForward: 0,
+  axisStrafe: 0,
 };
+
+// A locked pointer delivers every mouse event to the canvas, so on-screen
+// controls and pointer lock cannot coexist — the page picks one mode.
+const HAS_TOUCH = navigator.maxTouchPoints > 0 || window.matchMedia('(pointer: coarse)').matches;
 
 const state = {
   seed: 1337,
@@ -82,6 +88,7 @@ const state = {
   breakCooldown: 0,
   placeCooldown: 0,
   dragLook: false,
+  buttonMode: HAS_TOUCH,
 };
 
 let world = null;
@@ -305,9 +312,11 @@ function requestPlay() {
 
 function pause() {
   state.paused = true;
-  input.breaking = false;
-  input.placing = false;
-  for (const key of Object.keys(input)) input[key] = false;
+  for (const key of Object.keys(input)) input[key] = typeof input[key] === 'number' ? 0 : false;
+  for (const button of document.querySelectorAll('.action.held')) button.classList.remove('held');
+  document.getElementById('stick')?.classList.remove('active');
+  const knob = document.getElementById('stick-knob');
+  if (knob) knob.style.transform = '';
   ui.menu.hidden = false;
   updateSaveInfo();
   if (isPointerLocked()) document.exitPointerLock();
@@ -335,6 +344,10 @@ document.addEventListener('pointerlockchange', () => {
  * dragging the mouse to look, where a click without drag is break/place.
  */
 function grabPointer() {
+  if (state.buttonMode) {
+    enableDragLook();
+    return;
+  }
   const result = canvas.requestPointerLock?.();
   if (result && typeof result.catch === 'function') result.catch(() => enableDragLook());
   setTimeout(() => {
@@ -346,6 +359,11 @@ function enableDragLook() {
   if (state.dragLook) return;
   state.dragLook = true;
   ui.dragHint.hidden = false;
+  // The hint has done its job once you've read it; don't leave it on screen.
+  clearTimeout(enableDragLook.timer);
+  enableDragLook.timer = setTimeout(() => {
+    ui.dragHint.hidden = true;
+  }, 7000);
 }
 
 let dragging = false;
@@ -392,6 +410,37 @@ window.addEventListener('mouseup', (event) => {
 
 canvas.addEventListener('contextmenu', (event) => event.preventDefault());
 
+// Touch look: drag anywhere on the world to turn. Touches don't carry usable
+// movement deltas, so track the finger position ourselves. preventDefault
+// suppresses the synthetic mouse events that would otherwise break a block.
+let touchPointer = null;
+let touchLast = { x: 0, y: 0 };
+
+canvas.addEventListener('pointerdown', (event) => {
+  if (event.pointerType !== 'touch' || state.paused) return;
+  event.preventDefault();
+  touchPointer = event.pointerId;
+  touchLast = { x: event.clientX, y: event.clientY };
+  try {
+    canvas.setPointerCapture(event.pointerId);
+  } catch {
+    // Capture is an optimisation; window-level tracking below still works.
+  }
+});
+
+window.addEventListener('pointermove', (event) => {
+  if (event.pointerId !== touchPointer || state.paused) return;
+  event.preventDefault();
+  player.look(event.clientX - touchLast.x, event.clientY - touchLast.y, 0.004);
+  touchLast = { x: event.clientX, y: event.clientY };
+});
+
+const endTouchLook = (event) => {
+  if (event.pointerId === touchPointer) touchPointer = null;
+};
+window.addEventListener('pointerup', endTouchLook);
+window.addEventListener('pointercancel', endTouchLook);
+
 document.addEventListener('mousemove', (event) => {
   if (state.paused) return;
   if (state.dragLook) {
@@ -412,6 +461,160 @@ window.addEventListener(
   },
   { passive: true }
 );
+
+// ---------------------------------------------------- on-screen controls
+
+/**
+ * A movement stick and action buttons, driven by pointer events so they work
+ * for touch and mouse alike. The stick feeds analog axes into the same input
+ * object the keyboard writes to, so both can be used at once.
+ */
+let applyControlMode = () => {};
+
+function setupOnScreenControls() {
+  const controls = document.getElementById('touch-controls');
+  const stick = document.getElementById('stick');
+  const knob = document.getElementById('stick-knob');
+  const flyButton = document.getElementById('btn-fly');
+  const downButton = document.getElementById('btn-down');
+
+  const RADIUS = 46; // how far the knob travels, in pixels
+  let stickPointer = null;
+
+  const setAxes = (dx, dy) => {
+    input.axisStrafe = dx;
+    input.axisForward = -dy; // screen down is backwards
+    knob.style.transform = `translate(${dx * RADIUS}px, ${dy * RADIUS}px)`;
+  };
+
+  stick.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    stickPointer = event.pointerId;
+    stick.classList.add('active');
+  });
+
+  // Move and release are tracked on the window, so sliding a finger off the
+  // stick — or off a button — still steers and still releases cleanly.
+  window.addEventListener('pointermove', (event) => {
+    if (event.pointerId !== stickPointer) return;
+    const box = stick.getBoundingClientRect();
+    let dx = (event.clientX - (box.left + box.width / 2)) / RADIUS;
+    let dy = (event.clientY - (box.top + box.height / 2)) / RADIUS;
+    const length = Math.hypot(dx, dy);
+    if (length > 1) {
+      dx /= length;
+      dy /= length;
+    }
+    setAxes(dx, dy);
+  });
+
+  const releaseStick = (event) => {
+    if (event.pointerId !== stickPointer) return;
+    stickPointer = null;
+    stick.classList.remove('active');
+    setAxes(0, 0);
+  };
+  window.addEventListener('pointerup', releaseStick);
+  window.addEventListener('pointercancel', releaseStick);
+
+  /** Wires a button that acts while held down. */
+  const holdButton = (id, onPress, onRelease) => {
+    const button = document.getElementById(id);
+    let heldBy = null;
+
+    button.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      heldBy = event.pointerId;
+      button.classList.add('held');
+      onPress();
+    });
+
+    const release = (event) => {
+      if (heldBy === null || (event && event.pointerId !== heldBy)) return;
+      heldBy = null;
+      button.classList.remove('held');
+      onRelease?.();
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    return button;
+  };
+
+  holdButton(
+    'btn-break',
+    () => {
+      input.breaking = true;
+      state.breakCooldown = 0;
+      breakBlock();
+    },
+    () => {
+      input.breaking = false;
+    }
+  );
+
+  holdButton(
+    'btn-place',
+    () => {
+      input.placing = true;
+      state.placeCooldown = 0;
+      placeBlock();
+    },
+    () => {
+      input.placing = false;
+    }
+  );
+
+  holdButton(
+    'btn-jump',
+    () => {
+      input.jump = true;
+    },
+    () => {
+      input.jump = false;
+    }
+  );
+
+  holdButton(
+    'btn-down',
+    () => {
+      input.sneak = true;
+    },
+    () => {
+      input.sneak = false;
+    }
+  );
+
+  flyButton.addEventListener('pointerdown', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    player.flying = !player.flying;
+    player.velocity.y = 0;
+    refreshFlyButton();
+  });
+
+  function refreshFlyButton() {
+    const flying = Boolean(player?.flying);
+    flyButton.classList.toggle('on', flying);
+    // Jump doubles as "ascend" in flight, so descending needs its own button.
+    downButton.hidden = !flying;
+    if (!flying) {
+      input.sneak = false;
+      downButton.classList.remove('held');
+    }
+  }
+
+  applyControlMode = (buttonMode) => {
+    controls.hidden = !buttonMode;
+    if (!buttonMode) {
+      input.axisForward = 0;
+      input.axisStrafe = 0;
+      knob.style.transform = '';
+    }
+  };
+  applyControlMode(state.buttonMode);
+  return refreshFlyButton;
+}
 
 const KEY_BINDINGS = {
   KeyW: 'forward',
@@ -486,6 +689,23 @@ window.addEventListener('resize', () => {
 window.addEventListener('beforeunload', saveGame);
 
 document.getElementById('btn-play').addEventListener('click', requestPlay);
+
+const controlsButton = document.getElementById('btn-controls');
+function refreshControlsButton() {
+  controlsButton.textContent = `On-screen controls: ${state.buttonMode ? 'on' : 'off'}`;
+  controlsButton.classList.toggle('primary', false);
+}
+controlsButton.addEventListener('click', () => {
+  state.buttonMode = !state.buttonMode;
+  applyControlMode(state.buttonMode);
+  refreshControlsButton();
+  // Switching modes changes how looking works, so drop any pointer lock.
+  if (state.buttonMode && isPointerLocked()) document.exitPointerLock();
+  if (!state.buttonMode) {
+    state.dragLook = false;
+    ui.dragHint.hidden = true;
+  }
+});
 document.getElementById('btn-save').addEventListener('click', () => {
   if (saveGame()) ui.saveInfo.textContent = 'World saved.';
 });
@@ -596,6 +816,7 @@ function animate(now) {
     hudTimer = 0;
     const p = player.position;
     const mode = player.flying ? 'Fly' : player.inWater ? 'Swim' : player.onGround ? 'Walk' : 'Air';
+    refreshFlyControls?.();
     ui.stats.innerHTML =
       `<b>XYZ</b>  ${p.x.toFixed(1)} ${p.y.toFixed(1)} ${p.z.toFixed(1)}\n` +
       `<b>Biome</b> ${world.biomeNameAt(p.x, p.z)}\n` +
@@ -614,6 +835,9 @@ const initialSeed = existingSave?.seed ?? seedFromString('');
 ui.seedInput.value = String(initialSeed);
 renderPalette();
 startWorld(initialSeed, existingSave);
+const refreshFlyControls = setupOnScreenControls();
+refreshFlyControls();
+refreshControlsButton();
 selectSlot(state.selected);
 requestAnimationFrame(animate);
 
