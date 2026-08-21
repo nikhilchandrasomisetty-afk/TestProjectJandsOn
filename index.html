@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LifeCoach Log</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>LifeCoach Log</h1>
+      <p class="subtitle">Jot down a quick entry — a win, a mood, a photo. Kept locally on this device.</p>
+    </header>
+
+    <form id="entry-form" class="entry-form">
+      <textarea id="entry-text" placeholder="What's on your mind?" rows="3" required></textarea>
+
+      <div class="entry-form-row">
+        <select id="entry-mood" aria-label="Mood">
+          <option value="">No mood</option>
+          <option value="🙂">🙂 Good</option>
+          <option value="😐">😐 Neutral</option>
+          <option value="😞">😞 Rough</option>
+          <option value="🔥">🔥 Great</option>
+        </select>
+
+        <label class="photo-label">
+          📷 Photo
+          <input type="file" id="entry-photo" accept="image/*" hidden />
+        </label>
+
+        <button type="submit">Add entry</button>
+      </div>
+
+      <img id="photo-preview" class="photo-preview" hidden alt="Selected photo preview" />
+    </form>
+
+    <section>
+      <div class="log-header">
+        <h2>Log</h2>
+        <button id="clear-log" type="button" class="link-button">Clear all</button>
+      </div>
+      <ul id="log-list" class="log-list"></ul>
+      <p id="empty-state" class="empty-state">No entries yet. Add your first one above.</p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
