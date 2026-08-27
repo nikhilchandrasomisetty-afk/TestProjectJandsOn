@@ -15,7 +15,26 @@ vendored under `vendor/` with its MIT licence.
 
 ## Running the game
 
-The game is a static site using ES modules and an import map, so it must be served over
+### Easiest: the single file
+
+Open **`blockforge.html`** in any browser — double-click it, or drag it into a
+browser window. That one file contains the entire game (code, renderer, styles,
+and all procedurally generated textures and sounds). No server, no install, no
+network. It is the same game as the multi-file version, just bundled.
+
+Regenerate it after changing anything under `js/` or `css/`:
+
+```bash
+node build-standalone.mjs
+```
+
+One caveat: on `file://` some browsers restrict storage, so **saved worlds may not
+persist** (Chrome and Firefox work; Safari blocks it). Serve the folder over HTTP
+as below if you want saving to be reliable.
+
+### Multi-file version
+
+The rest of the project is a static site using ES modules and an import map, so it must be served over
 HTTP — opening `index.html` from the filesystem will not work (browsers block module
 loading from `file://`).
 
