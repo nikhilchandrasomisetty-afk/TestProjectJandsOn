@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#101725" />
+<title>Blockforge — Voxel Sandbox</title>
+<link rel="stylesheet" href="css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' fill='%235fb64c'/><rect y='12' width='32' height='20' fill='%238a6a44'/></svg>" />
+<script type="importmap">
+{
+  "imports": {
+    "three": "./vendor/three.module.js"
+  }
+}
+</script>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- ============ HUD ============ -->
+<div id="hud" class="hidden">
+  <div id="crosshair"><span></span><span></span></div>
+
+  <div id="damage-flash"></div>
+
+  <div id="hud-top-left">
+    <div id="clock-chip"><span id="clock-icon">☀</span> <span id="clock-time">06:00</span></div>
+    <div id="mode-chip">SURVIVAL</div>
+  </div>
+
+  <div id="debug-panel" class="hidden"></div>
+
+  <div id="toast-stack"></div>
+
+  <div id="hud-bottom">
+    <div id="stat-bars">
+      <div class="stat-row" id="health-row">
+        <span class="stat-label">HP</span>
+        <div class="bar"><div class="bar-fill health" id="health-fill"></div></div>
+      </div>
+      <div class="stat-row" id="hunger-row">
+        <span class="stat-label">FD</span>
+        <div class="bar"><div class="bar-fill hunger" id="hunger-fill"></div></div>
+      </div>
+      <div class="stat-row" id="stamina-row">
+        <span class="stat-label">ST</span>
+        <div class="bar"><div class="bar-fill stamina" id="stamina-fill"></div></div>
+      </div>
+      <div class="stat-row hidden" id="breath-row">
+        <span class="stat-label">O₂</span>
+        <div class="bar"><div class="bar-fill breath" id="breath-fill"></div></div>
+      </div>
+    </div>
+    <div id="hotbar"></div>
+    <div id="held-name"></div>
+  </div>
+
+  <!-- Touch controls, shown only on coarse-pointer devices -->
+  <div id="touch-controls" class="hidden">
+    <div id="touch-look"></div>
+    <div id="touch-joystick"><div id="joystick-ring"></div><div id="joystick-knob"></div></div>
+    <div id="touch-buttons">
+      <button id="btn-place" class="touch-btn" aria-label="Place block">PLACE</button>
+      <button id="btn-break" class="touch-btn primary" aria-label="Break block">BREAK</button>
+      <button id="btn-jump" class="touch-btn" aria-label="Jump">JUMP</button>
+      <button id="btn-crouch" class="touch-btn small" aria-label="Crouch">CROUCH</button>
+      <button id="btn-fly" class="touch-btn small" aria-label="Toggle flying">FLY</button>
+    </div>
+    <div id="touch-menu-buttons">
+      <button id="btn-inv" class="touch-btn small" aria-label="Inventory">BAG</button>
+      <button id="btn-craft" class="touch-btn small" aria-label="Crafting">CRAFT</button>
+      <button id="btn-pause" class="touch-btn small" aria-label="Pause">☰</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ MAIN MENU ============ -->
+<div id="main-menu" class="screen">
+  <div class="menu-bg-blocks" aria-hidden="true"></div>
+  <div class="menu-panel">
+    <h1 class="game-title">BLOCK<span>FORGE</span></h1>
+    <p class="tagline">An original voxel sandbox — build, mine, survive.</p>
+    <div class="menu-buttons">
+      <button class="btn big" id="menu-play">PLAY</button>
+      <button class="btn" id="menu-create">CREATE WORLD</button>
+      <button class="btn" id="menu-load">LOAD WORLD</button>
+      <button class="btn" id="menu-settings">SETTINGS</button>
+      <button class="btn" id="menu-help">HOW TO PLAY</button>
+    </div>
+    <div class="menu-footer">Original code &amp; art. Not affiliated with any other game.</div>
+  </div>
+</div>
+
+<!-- ============ CREATE WORLD ============ -->
+<div id="create-screen" class="screen hidden">
+  <div class="menu-panel wide">
+    <h2>Create a World</h2>
+    <label class="field">
+      <span>World name</span>
+      <input type="text" id="create-name" maxlength="28" placeholder="New World" />
+    </label>
+    <label class="field">
+      <span>Seed <small>(blank = random)</small></span>
+      <input type="text" id="create-seed" maxlength="32" placeholder="random" />
+    </label>
+    <div class="field">
+      <span>Game mode</span>
+      <div class="segmented" id="create-mode">
+        <button class="seg active" data-mode="survival">SURVIVAL</button>
+        <button class="seg" data-mode="creative">CREATIVE</button>
+      </div>
+      <p class="hint" id="mode-hint">Gather resources, craft tools, fend off night creatures.</p>
+    </div>
+    <div class="field">
+      <span>World size</span>
+      <div class="segmented" id="create-size">
+        <button class="seg" data-radius="4">SMALL</button>
+        <button class="seg active" data-radius="6">NORMAL</button>
+        <button class="seg" data-radius="9">LARGE</button>
+      </div>
+      <p class="hint">Controls how far chunks stream in around you.</p>
+    </div>
+    <div class="row-buttons">
+      <button class="btn ghost" data-back>BACK</button>
+      <button class="btn primary" id="create-start">CREATE &amp; PLAY</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOAD WORLD ============ -->
+<div id="load-screen" class="screen hidden">
+  <div class="menu-panel wide">
+    <h2>Load World</h2>
+    <div id="world-list" class="world-list"></div>
+    <div class="row-buttons">
+      <button class="btn ghost" data-back>BACK</button>
+      <button class="btn" id="load-refresh">REFRESH</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ SETTINGS ============ -->
+<div id="settings-screen" class="screen hidden">
+  <div class="menu-panel wide">
+    <h2>Settings</h2>
+    <label class="field slider-field">
+      <span>Render distance: <b id="val-render">6</b> chunks</span>
+      <input type="range" id="set-render" min="2" max="12" step="1" value="6" />
+    </label>
+    <label class="field slider-field">
+      <span>Field of view: <b id="val-fov">75</b>°</span>
+      <input type="range" id="set-fov" min="55" max="100" step="1" value="75" />
+    </label>
+    <label class="field slider-field">
+      <span>Mouse sensitivity: <b id="val-sens">100</b>%</span>
+      <input type="range" id="set-sens" min="20" max="300" step="5" value="100" />
+    </label>
+    <label class="field slider-field">
+      <span>Day length: <b id="val-day">10</b> min</span>
+      <input type="range" id="set-day" min="2" max="30" step="1" value="10" />
+    </label>
+    <label class="check-field"><input type="checkbox" id="set-invert" /> <span>Invert vertical look</span></label>
+    <label class="check-field"><input type="checkbox" id="set-touch" /> <span>Force touch controls on</span></label>
+    <label class="check-field"><input type="checkbox" id="set-sound" checked /> <span>Sound effects</span></label>
+    <div class="row-buttons">
+      <button class="btn ghost" data-back>BACK</button>
+      <button class="btn primary" id="settings-save">SAVE</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ HELP ============ -->
+<div id="help-screen" class="screen hidden">
+  <div class="menu-panel wide scroll">
+    <h2>How to Play</h2>
+    <div class="help-grid">
+      <section>
+        <h3>Keyboard &amp; Mouse</h3>
+        <ul class="keylist">
+          <li><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> Move</li>
+          <li><kbd>Mouse</kbd> Look around</li>
+          <li><kbd>Space</kbd> Jump · double-tap to fly (creative)</li>
+          <li><kbd>Shift</kbd> Sprint</li>
+          <li><kbd>Ctrl</kbd> / <kbd>C</kbd> Crouch</li>
+          <li><kbd>Left click</kbd> hold to break / attack</li>
+          <li><kbd>Right click</kbd> Place block · eat food</li>
+          <li><kbd>Middle click</kbd> Pick block</li>
+          <li><kbd>1</kbd>–<kbd>9</kbd> / <kbd>Wheel</kbd> Select hotbar slot</li>
+          <li><kbd>E</kbd> Inventory · <kbd>F</kbd> Crafting</li>
+          <li><kbd>Q</kbd> Drop held item</li>
+          <li><kbd>G</kbd> Swap creative / survival</li>
+          <li><kbd>H</kbd> or <kbd>F3</kbd> Debug info</li>
+          <li><kbd>Esc</kbd> Pause menu</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Touch / Tablet</h3>
+        <ul class="keylist">
+          <li><b>Left joystick</b> Move — push to the edge to sprint</li>
+          <li><b>Drag anywhere</b> on the right to look</li>
+          <li><b>Tap</b> the look area to break the targeted block</li>
+          <li><b>BREAK</b> hold to mine · <b>PLACE</b> to build</li>
+          <li><b>JUMP</b> · double-tap for flight in creative</li>
+          <li><b>CROUCH</b> toggles sneaking</li>
+          <li><b>BAG</b> inventory · <b>CRAFT</b> recipes · <b>☰</b> pause</li>
+          <li><b>Tap a hotbar slot</b> to select it</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Getting started</h3>
+        <ol class="steps">
+          <li>Punch a <b>Timber Log</b> from a tree.</li>
+          <li>Open crafting (<kbd>F</kbd>) and make <b>Planks</b>, then <b>Sticks</b>.</li>
+          <li>Craft a <b>Workbench</b> and place it to unlock the full recipe list.</li>
+          <li>Craft a <b>Timber Pickaxe</b> and mine stone → cobblestone.</li>
+          <li>Craft <b>stone tools</b>, then a <b>Furnace</b> and <b>Torches</b>.</li>
+          <li>Smelt <b>Iron Ore</b> into ingots for iron gear, then hunt <b>Crystal Ore</b> deep underground.</li>
+          <li>Build a shelter before night — <b>Night Grumbles</b> hunt in the dark.</li>
+        </ol>
+      </section>
+      <section>
+        <h3>Creatures</h3>
+        <ul class="keylist">
+          <li><b>Meadow Hopper</b> — peaceful, drops raw cuts</li>
+          <li><b>Ridge Tusker</b> — peaceful, sturdier</li>
+          <li><b>Cave Glimmer</b> — glows underground, drops crystal shards</li>
+          <li><b>Night Grumble</b> — hostile at night, burns at sunrise</li>
+          <li><b>Stone Spikeling</b> — fast cave hostile</li>
+        </ul>
+      </section>
+    </div>
+    <div class="row-buttons">
+      <button class="btn primary" data-back>BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAUSE ============ -->
+<div id="pause-screen" class="screen hidden overlay">
+  <div class="menu-panel">
+    <h2 id="pause-title">Paused</h2>
+    <p class="tagline" id="pause-world-name"></p>
+    <div class="menu-buttons">
+      <button class="btn big" id="pause-resume">RESUME</button>
+      <button class="btn" id="pause-save">SAVE WORLD</button>
+      <button class="btn" id="pause-settings">SETTINGS</button>
+      <button class="btn" id="pause-help">HOW TO PLAY</button>
+      <button class="btn danger" id="pause-quit">SAVE &amp; QUIT TO MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEATH ============ -->
+<div id="death-screen" class="screen hidden overlay dark">
+  <div class="menu-panel">
+    <h2 class="death">You Blacked Out</h2>
+    <p class="tagline" id="death-reason">The world moved on without you.</p>
+    <div class="menu-buttons">
+      <button class="btn big" id="death-respawn">RESPAWN</button>
+      <button class="btn" id="death-quit">QUIT TO MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ INVENTORY / CRAFTING ============ -->
+<div id="inventory-screen" class="screen hidden overlay">
+  <div class="inv-panel">
+    <div class="inv-tabs">
+      <button class="tab active" data-tab="inventory">INVENTORY</button>
+      <button class="tab" data-tab="crafting">CRAFTING</button>
+      <button class="tab-close" id="inv-close" aria-label="Close">✕</button>
+    </div>
+
+    <div class="tab-body" id="tab-inventory">
+      <div class="inv-section">
+        <h4>Backpack</h4>
+        <div id="inv-grid" class="slot-grid"></div>
+      </div>
+      <div class="inv-section">
+        <h4>Hotbar</h4>
+        <div id="inv-hotbar" class="slot-grid hotbar-grid"></div>
+      </div>
+      <p class="hint" id="inv-hint">Click or tap a slot, then another, to move items. Creative mode: pick blocks from the palette below.</p>
+      <div class="inv-section hidden" id="creative-palette-section">
+        <h4>Creative Palette</h4>
+        <div id="creative-palette" class="slot-grid"></div>
+      </div>
+    </div>
+
+    <div class="tab-body hidden" id="tab-crafting">
+      <div class="craft-header">
+        <span id="craft-status" class="craft-status">Basic recipes only — place a Workbench nearby for the full list.</span>
+      </div>
+      <div id="recipe-list" class="recipe-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ LOADING ============ -->
+<div id="loading-screen" class="screen hidden overlay dark">
+  <div class="loading-box">
+    <div class="loader-blocks"><i></i><i></i><i></i><i></i></div>
+    <h3 id="loading-title">Forging the world…</h3>
+    <p id="loading-sub">Generating terrain</p>
+  </div>
+</div>
+
+<div id="fatal-error" class="screen hidden overlay dark">
+  <div class="menu-panel">
+    <h2 class="death">Something broke</h2>
+    <pre id="fatal-msg" class="fatal-msg"></pre>
+    <div class="menu-buttons"><button class="btn" id="fatal-reload">RELOAD</button></div>
+  </div>
+</div>
+
+<script type="module" src="js/main.js"></script>
+<noscript><p style="color:#fff;padding:2rem;font-family:sans-serif">This game needs JavaScript enabled.</p></noscript>
+</body>
+</html>
