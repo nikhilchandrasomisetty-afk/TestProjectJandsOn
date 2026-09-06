@@ -2,9 +2,7 @@
 <html lang="en"><head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
-</head><body>
-<title>Game Studio</title>
+<style>body{margin:0}img{max-width:100<title>Game Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -292,14 +290,14 @@
           <div id="chat-tabs" class="chat-tabs" aria-label="Open chats"></div>
           <div id="hero" class="hero">
             <p class="hero-eyebrow">AI assistant</p>
-            <h1>What do you want to play?</h1>
-            <p>Ask me for a game and I’ll load it right here. I can also do math, tell the time, flip a coin, or tell you a joke — type “help” to see everything.</p>
+            <h1>What shall I build?</h1>
+            <p>Tools, games, a website — name one and it opens right here. I can also do maths, conversions, dates and timers. Type “help” to see everything.</p>
           </div>
 
           <div id="gm-chat" class="gm-chat"></div>
 
           <form id="gm-form" class="composer">
-            <textarea id="gm-input" rows="1" placeholder="Ask for a game… or type “help”" required></textarea>
+            <textarea id="gm-input" rows="1" placeholder="Ask for a tool, a game, or anything… type “help”" required></textarea>
             <div class="composer-footer">
               <select id="mode-select" class="mode-select" aria-label="Model"
                       title="Best at the top, most basic at the bottom. These are tiers of the built-in bot, not different AIs.">
@@ -316,9 +314,11 @@
           </form>
 
           <div id="gm-examples" class="examples">
-            <button type="button" class="example-chip">Play snake</button>
-            <button type="button" class="example-chip">Play breakout</button>
-            <button type="button" class="example-chip">Tell me a joke</button>
+            <button type="button" class="example-chip">Drawing pad</button>
+            <button type="button" class="example-chip">Calculator</button>
+            <button type="button" class="example-chip">Beat maker</button>
+            <button type="button" class="example-chip">Minecraft</button>
+            <button type="button" class="example-chip">Make me a website</button>
             <button type="button" class="example-chip">help</button>
           </div>
 
@@ -1084,7 +1084,206 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
 <\/script></body></html>`;
   }
 
+  // ---- tools (not games) ----
+  function buildDrawing(level) {
+    const cols = level >= 4 ? ['#222','#e5484d','#f5a524','#f2d13b','#46a758','#3b82f6','#8b5cf6','#ec4899','#8a6a44','#ffffff']
+      : level >= 3 ? ['#222','#e5484d','#f5a524','#46a758','#3b82f6','#ffffff']
+      : level >= 2 ? ['#222','#e5484d','#3b82f6'] : ['#222'];
+    const sizes = level >= 4 ? [2,6,14,28] : level >= 3 ? [2,8,18] : [4];
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Drawing Pad</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}canvas{background:#fff;border-radius:12px;touch-action:none;cursor:crosshair;max-width:92vw}
+.bar{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;margin:10px 0}
+.sw{width:26px;height:26px;border-radius:50%;border:2px solid #3a3644;cursor:pointer}
+.sw.on{border-color:#d99a4e;transform:scale(1.15)}
+button{background:#2a2733;color:#ece8df;border:0;border-radius:8px;padding:8px 14px;font:inherit;cursor:pointer}
+button.on{background:#d99a4e;color:#1c1409}
+p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w">
+<canvas id="c" width="420" height="300"></canvas>
+<div class="bar" id="cols"></div>
+<div class="bar" id="sizes"></div>
+<div class="bar"><button id="er">Eraser</button><button id="cl">Clear</button></div>
+<p>Click or drag to draw.</p></div><script>
+var COLS=${JSON.stringify(cols)},SIZES=${JSON.stringify(sizes)};
+var c=document.getElementById('c'),x=c.getContext('2d'),col=COLS[0],sz=SIZES[0],erase=0,down=0;
+x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.lineCap='round';x.lineJoin='round';
+COLS.forEach(function(v,i){var b=document.createElement('div');b.className='sw'+(i?'':' on');b.style.background=v;
+ b.onclick=function(){col=v;erase=0;document.getElementById('er').className='';
+  Array.prototype.forEach.call(document.querySelectorAll('.sw'),function(s){s.className='sw'});b.className='sw on'};
+ document.getElementById('cols').appendChild(b)});
+SIZES.forEach(function(v,i){var b=document.createElement('button');b.textContent=v+'px';if(!i)b.className='on';
+ b.onclick=function(){sz=v;Array.prototype.forEach.call(document.querySelectorAll('#sizes button'),function(s){s.className=''});b.className='on'};
+ document.getElementById('sizes').appendChild(b)});
+function pos(e){var r=c.getBoundingClientRect(),t=e.touches?e.touches[0]:e;
+ return {x:(t.clientX-r.left)*(c.width/r.width),y:(t.clientY-r.top)*(c.height/r.height)}}
+function start(e){down=1;var p=pos(e);x.beginPath();x.moveTo(p.x,p.y);e.preventDefault()}
+function move(e){if(!down)return;var p=pos(e);x.strokeStyle=erase?'#fff':col;x.lineWidth=erase?sz*2.5:sz;
+ x.lineTo(p.x,p.y);x.stroke();e.preventDefault()}
+function end(){down=0}
+c.addEventListener('mousedown',start);c.addEventListener('mousemove',move);window.addEventListener('mouseup',end);
+c.addEventListener('touchstart',start,{passive:false});c.addEventListener('touchmove',move,{passive:false});c.addEventListener('touchend',end);
+document.getElementById('er').onclick=function(){erase=!erase;this.className=erase?'on':''};
+document.getElementById('cl').onclick=function(){x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height)};
+<\/script></body></html>`;
+  }
+
+  function buildTodo(level) {
+    const due = level >= 3;
+    return `<!doctype html><html><head><meta charset="utf-8"><title>To-do List</title><style>
+html,body{margin:0;min-height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif}
+.w{max-width:460px;margin:0 auto;padding:26px 18px}
+h1{font-size:1.4rem;margin:0 0 4px}.sub{color:#a39c8f;font-size:.9rem;margin:0 0 16px}
+form{display:flex;gap:8px;margin-bottom:14px}
+input{flex:1;background:#26232f;border:1px solid #35323f;color:#ece8df;border-radius:9px;padding:11px 13px;font:inherit}
+button{background:#d99a4e;color:#1c1409;border:0;border-radius:9px;padding:11px 16px;font:inherit;font-weight:600;cursor:pointer}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+li{display:flex;align-items:center;gap:10px;background:#201e29;border:1px solid #35323f;border-radius:10px;padding:11px 13px}
+li.done span{text-decoration:line-through;color:#6f6a60}
+li span{flex:1}
+.chk{width:20px;height:20px;border-radius:6px;border:2px solid #4a4657;cursor:pointer;flex-shrink:0}
+.chk.on{background:#46a758;border-color:#46a758}
+.del{background:none;color:#a39c8f;padding:4px;font-size:.8rem}
+.count{color:#a39c8f;font-size:.82rem;margin-top:14px}
+</style></head><body><div class="w">
+<h1>To-do</h1><p class="sub">${due ? 'Add tasks, tick them off, and see what is left.' : 'Add tasks and tick them off.'}</p>
+<form id="f"><input id="i" placeholder="What needs doing?" required><button>Add</button></form>
+<ul id="l"></ul><p class="count" id="c">Nothing yet.</p></div><script>
+var items=[],l=document.getElementById('l'),cEl=document.getElementById('c');
+function render(){l.innerHTML='';items.forEach(function(it,i){
+ var li=document.createElement('li');if(it.done)li.className='done';
+ var ck=document.createElement('div');ck.className='chk'+(it.done?' on':'');ck.onclick=function(){it.done=!it.done;render()};
+ var sp=document.createElement('span');sp.textContent=it.text;
+ ${due ? "var dt=document.createElement('small');dt.style.color='#6f6a60';dt.style.fontSize='.75rem';dt.textContent=it.when;" : ''}
+ var d=document.createElement('button');d.className='del';d.textContent='Delete';d.onclick=function(){items.splice(i,1);render()};
+ li.appendChild(ck);li.appendChild(sp);${due ? 'li.appendChild(dt);' : ''}li.appendChild(d);l.appendChild(li)});
+ var left=items.filter(function(i){return !i.done}).length;
+ cEl.textContent=items.length?left+' of '+items.length+' left':'Nothing yet.'}
+document.getElementById('f').onsubmit=function(e){e.preventDefault();var v=document.getElementById('i').value.trim();
+ if(!v)return;items.push({text:v,done:false,when:new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})});
+ document.getElementById('i').value='';render()};
+render();
+<\/script></body></html>`;
+  }
+
+  function buildCalculator() {
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Calculator</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{width:280px}
+#d{background:#201e29;border:1px solid #35323f;border-radius:12px;padding:16px;text-align:right;
+font-size:2rem;font-variant-numeric:tabular-nums;margin-bottom:10px;min-height:34px;overflow-x:auto;white-space:nowrap}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+button{background:#26232f;color:#ece8df;border:0;border-radius:10px;padding:16px 0;font:inherit;font-size:1.05rem;cursor:pointer}
+button:hover{background:#302c3c}
+button.op{background:#3a3444;color:#d99a4e}
+button.eq{background:#d99a4e;color:#1c1409;font-weight:700}
+button.wide{grid-column:span 2}
+p{color:#7a7466;font-size:12px;text-align:center}
+</style></head><body><div class="w">
+<div id="d">0</div><div class="g" id="g"></div><p>Your keyboard works too.</p></div><script>
+var d=document.getElementById('d'),cur='0',prev=null,op=null,fresh=1;
+var keys=['C','←','%','÷','7','8','9','×','4','5','6','−','1','2','3','+','0','.','='];
+keys.forEach(function(k){var b=document.createElement('button');b.textContent=k;
+ if('÷×−+%'.indexOf(k)>=0)b.className='op';if(k==='=')b.className='eq wide';
+ b.onclick=function(){press(k)};document.getElementById('g').appendChild(b)});
+function show(){d.textContent=cur.length>12?parseFloat(cur).toPrecision(10):cur}
+function calc(){var a=parseFloat(prev),b=parseFloat(cur),r=b;
+ if(op==='+')r=a+b;if(op==='−')r=a-b;if(op==='×')r=a*b;if(op==='÷')r=b?a/b:NaN;if(op==='%')r=a%b;
+ return isFinite(r)?String(Math.round(r*1e9)/1e9):'Error'}
+function press(k){
+ if(k==='C'){cur='0';prev=null;op=null;fresh=1}
+ else if(k==='←'){cur=cur.length>1?cur.slice(0,-1):'0'}
+ else if('0123456789'.indexOf(k)>=0){cur=(fresh||cur==='0')?k:cur+k;fresh=0}
+ else if(k==='.'){if(fresh){cur='0.';fresh=0}else if(cur.indexOf('.')<0)cur+='.'}
+ else if(k==='='){if(op){cur=calc();prev=null;op=null;fresh=1}}
+ else{if(op&&!fresh)cur=calc();prev=cur;op=k;fresh=1}
+ show()}
+document.addEventListener('keydown',function(e){var m={'/':'÷','*':'×','-':'−','+':'+','%':'%','Enter':'=','=':'=','Backspace':'←','Escape':'C'};
+ if('0123456789.'.indexOf(e.key)>=0)press(e.key);else if(m[e.key]){e.preventDefault();press(m[e.key])}});
+show();
+<\/script></body></html>`;
+  }
+
+  function buildMusic(level) {
+    const tracks = level >= 4 ? 5 : level >= 3 ? 4 : level >= 2 ? 3 : 2;
+    const steps = level >= 3 ? 16 : 8;
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Beat Maker</title><style>
+html,body{margin:0;min-height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif}
+.w{max-width:620px;margin:0 auto;padding:24px 16px;text-align:center}
+h1{font-size:1.3rem;margin:0 0 12px}
+.row{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.lbl{width:62px;text-align:right;font-size:.78rem;color:#a39c8f;flex-shrink:0}
+.steps{display:flex;gap:4px;flex:1}
+.st{flex:1;aspect-ratio:1;border-radius:6px;background:#26232f;border:1px solid #35323f;cursor:pointer;min-width:0}
+.st.on{background:#d99a4e;border-color:#d99a4e}
+.st.cue{outline:2px solid #ece8df}
+.ctl{display:flex;gap:10px;justify-content:center;align-items:center;margin-top:14px;flex-wrap:wrap}
+button{background:#d99a4e;color:#1c1409;border:0;border-radius:9px;padding:10px 20px;font:inherit;font-weight:600;cursor:pointer}
+button.gh{background:#2a2733;color:#ece8df;font-weight:400}
+input[type=range]{width:130px}
+p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w"><h1>Beat Maker</h1>
+<div id="grid"></div>
+<div class="ctl"><button id="pl">Play</button><button class="gh" id="cl">Clear</button>
+<label style="font-size:.8rem;color:#a39c8f">Tempo <input id="bpm" type="range" min="60" max="180" value="110"></label>
+<span id="bv" style="font-size:.8rem;color:#a39c8f">110</span></div>
+<p>Tap the squares to build a pattern, then press Play.</p></div><script>
+var NAMES=['Kick','Snare','Hat','Clap','Tom'].slice(0,${tracks}),STEPS=${steps};
+var FREQ=[55,180,9000,320,110],pat=[],ac=null,timer=null,step=0,playing=0;
+NAMES.forEach(function(n,r){pat.push(new Array(STEPS).fill(0));
+ var row=document.createElement('div');row.className='row';
+ var lb=document.createElement('div');lb.className='lbl';lb.textContent=n;row.appendChild(lb);
+ var ss=document.createElement('div');ss.className='steps';
+ for(var s=0;s<STEPS;s++){(function(r,s){var b=document.createElement('div');b.className='st';b.id='s'+r+'-'+s;
+  b.onclick=function(){pat[r][s]=pat[r][s]?0:1;b.className='st'+(pat[r][s]?' on':'')};ss.appendChild(b)})(r,s)}
+ row.appendChild(ss);document.getElementById('grid').appendChild(row)});
+function hit(r){if(!ac)return;var t=ac.currentTime,o=ac.createOscillator(),g=ac.createGain();
+ if(r===2){var b=ac.createBuffer(1,2048,ac.sampleRate),d=b.getChannelData(0);
+  for(var i=0;i<2048;i++)d[i]=Math.random()*2-1;var n=ac.createBufferSource();n.buffer=b;
+  var f=ac.createBiquadFilter();f.type='highpass';f.frequency.value=7000;
+  n.connect(f);f.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(.25,t);
+  g.gain.exponentialRampToValueAtTime(.001,t+.05);n.start(t);n.stop(t+.06);return}
+ o.frequency.setValueAtTime(FREQ[r],t);
+ if(r===0)o.frequency.exponentialRampToValueAtTime(30,t+.12);
+ o.type=r===1||r===3?'triangle':'sine';o.connect(g);g.connect(ac.destination);
+ g.gain.setValueAtTime(.3,t);g.gain.exponentialRampToValueAtTime(.001,t+(r===0?.2:.12));
+ o.start(t);o.stop(t+.25)}
+function tick(){for(var s=0;s<STEPS;s++)for(var r=0;r<NAMES.length;r++){
+  var e=document.getElementById('s'+r+'-'+s);e.className='st'+(pat[r][s]?' on':'')+(s===step?' cue':'')}
+ for(var r2=0;r2<NAMES.length;r2++)if(pat[r2][step])hit(r2);
+ step=(step+1)%STEPS}
+document.getElementById('pl').onclick=function(){
+ if(!ac)ac=new (window.AudioContext||window.webkitAudioContext)();
+ if(ac.state==='suspended')ac.resume();
+ playing=!playing;this.textContent=playing?'Stop':'Play';
+ clearInterval(timer);
+ if(playing)timer=setInterval(tick,60000/document.getElementById('bpm').value/4);
+ else{step=0;tick();clearInterval(timer)}};
+document.getElementById('bpm').oninput=function(){document.getElementById('bv').textContent=this.value;
+ if(playing){clearInterval(timer);timer=setInterval(tick,60000/this.value/4)}};
+document.getElementById('cl').onclick=function(){pat.forEach(function(r){r.fill(0)});step=0;tick()};
+<\/script></body></html>`;
+  }
+
   const GAME_LIBRARY = [
+    { id: 'drawing', name: 'Drawing Pad', build: buildDrawing,
+      match: /draw|paint|sketch|doodle|art\b/i,
+      controls: 'Click or drag to draw. Pick a colour and a brush size.',
+      quality: { 4: 'Ten colours, four brush sizes and an eraser.', 3: 'Six colours and three brush sizes.',
+                 2: 'Three colours, one brush.', 1: 'One colour, one brush.' } },
+    { id: 'todo', name: 'To-do List', build: buildTodo,
+      match: /to.?do|task list|checklist|tasks\b|reminder list/i,
+      controls: 'Type a task and press Add. Tap the circle to tick it off.',
+      quality: { 4: 'With times added and a count of what is left.', 3: 'With times added.',
+                 2: 'Simple add and tick off.', 1: 'Simple add and tick off.' } },
+    { id: 'calc', name: 'Calculator', build: buildCalculator,
+      match: /calculator|calc\b|adding machine/i,
+      controls: 'Click the buttons or use your keyboard.' },
+    { id: 'music', name: 'Beat Maker', build: buildMusic,
+      match: /music|beat|drum|sequencer|rhythm|sound maker/i,
+      controls: 'Tap squares to build a pattern, then press Play.',
+      quality: { 4: 'Five instruments over sixteen steps.', 3: 'Four instruments over sixteen steps.',
+                 2: 'Three instruments over eight steps.', 1: 'Two instruments over eight steps.' } },
     { id: 'website', name: 'Website', build: buildWebsite,
       match: /website|web ?site|web ?page|landing ?page|portfolio|homepage|a site\b/i,
       controls: 'Scroll it, use the menu, and try the buttons — it is a live page.',
@@ -1165,7 +1364,7 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
     gameBuilt = false;
     const hero = document.getElementById('hero');
     hero.classList.remove('is-compact');
-    hero.querySelector('h1').textContent = 'What do you want to play?';
+    hero.querySelector('h1').textContent = 'What shall I build?';
     document.getElementById('gm-examples').hidden = false;
     document.getElementById('gm-new').hidden = true;
     document.getElementById('gm-chat').innerHTML = '';
@@ -1176,7 +1375,7 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
     document.getElementById('gm-status').textContent = '';
     updateCode(null);
     const input = document.getElementById('gm-input');
-    input.placeholder = 'Ask for a game… or type “help”';
+    input.placeholder = 'Ask for a tool, a game, or anything… type “help”';
     input.focus();
   }
 
@@ -1206,10 +1405,12 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
   const HELP_TEXT = [
     'Here is what I can do:',
     '',
-    'Build',
-    '• "make me a website"  •  "minecraft" (3D block world)',
-    '• "play snake", "breakout", "memory match", "tic-tac-toe"',
-    '• "surprise me" — I pick one',
+    'Build tools',
+    '• "drawing pad"  •  "to-do list"  •  "calculator"  •  "beat maker"  •  "make me a website"',
+    '',
+    'Build games',
+    '• "minecraft" (3D block world), "play snake", "breakout", "memory match", "tic-tac-toe"',
+    '• "surprise me" — I pick one for you',
     '',
     'Work things out',
     '• Maths — "what is 12 * 7", "(4+5)*3"',
@@ -1621,7 +1822,7 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
     if (game) return { text: 'I have ' + game.name + ' ready — say "play ' + game.name.toLowerCase() + '" and I will load it.', };
 
     if (/game|build|make/.test(t)) {
-      return { text: 'I can build: a Website, a 3D Block World (Minecraft-style), Snake, Breakout, Memory Match, and Tic-Tac-Toe.\n\nSay "make me a website" or "play snake" and I will load it.' };
+      return { text: 'I can build:\n\nTools — a Drawing Pad, a To-do List, a Calculator, a Beat Maker, a Website\nGames — a 3D Block World, Snake, Breakout, Memory Match, Tic-Tac-Toe\n\nJust name one, like "open the calculator" or "make me a website".' };
     }
 
     const L = lvl();
@@ -1850,7 +2051,7 @@ document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=func
     } else {
       const hero = document.getElementById('hero');
       hero.classList.remove('is-compact');
-      hero.querySelector('h1').textContent = 'What do you want to play?';
+      hero.querySelector('h1').textContent = 'What shall I build?';
       document.getElementById('gm-examples').hidden = false;
       document.getElementById('gm-new').hidden = true;
     }
