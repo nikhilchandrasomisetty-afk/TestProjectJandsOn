@@ -1,51 +1,294 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>LifeCoach Log</title>
-  <link rel="stylesheet" href="style.css" />
-</head>
-<body>
-  <main class="app">
-    <header>
-      <h1>LifeCoach Log</h1>
-      <p class="subtitle">Jot down a quick entry — a win, a mood, a photo. Kept locally on this device.</p>
-    </header>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<title>Meet Game Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#eeece5; --surface:#fbfaf6; --surface-2:#f3f0e8;
+    --ink:#232220; --soft:#6b665c; --line:#ddd8cb;
+    --accent:#a8712f; --accent-ink:#fffaf1;
+    --shadow:0 1px 2px rgba(35,30,20,.06), 0 10px 30px -14px rgba(35,30,20,.2);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#17151f; --surface:#201e29; --surface-2:#26232f;
+      --ink:#ece8df; --soft:#a39c8f; --line:#35323f;
+      --accent:#d99a4e; --accent-ink:#1c1409;
+      --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 36px -16px rgba(0,0,0,.6);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#17151f; --surface:#201e29; --surface-2:#26232f;
+    --ink:#ece8df; --soft:#a39c8f; --line:#35323f;
+    --accent:#d99a4e; --accent-ink:#1c1409;
+    --shadow:0 1px 2px rgba(0,0,0,.3), 0 14px 36px -16px rgba(0,0,0,.6);
+  }
 
-    <form id="entry-form" class="entry-form">
-      <textarea id="entry-text" placeholder="What's on your mind?" rows="3" required></textarea>
+  *{box-sizing:border-box}
+  [hidden]{display:none!important}
+  html,body{background:var(--bg)}
+  body{margin:0;color:var(--ink);font-family:"Work Sans",ui-sans-serif,system-ui,sans-serif;line-height:1.6}
+  button{font:inherit}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .wrap{max-width:880px;margin:0 auto;padding:0 22px}
 
-      <div class="entry-form-row">
-        <select id="entry-mood" aria-label="Mood">
-          <option value="">No mood</option>
-          <option value="🙂">🙂 Good</option>
-          <option value="😐">😐 Neutral</option>
-          <option value="😞">😞 Rough</option>
-          <option value="🔥">🔥 Great</option>
-        </select>
+  /* hero */
+  header{padding:clamp(56px,12vh,120px) 0 44px;text-align:center}
+  .eyebrow{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--accent);margin:0 0 16px}
+  h1{font-family:"Fraunces",Georgia,serif;font-weight:700;font-size:clamp(2.6rem,8vw,4.4rem);
+    line-height:1.02;letter-spacing:-.035em;margin:0 0 18px;text-wrap:balance}
+  .lede{color:var(--soft);font-size:1.12rem;max-width:36rem;margin:0 auto 26px;text-wrap:pretty}
+  .cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:18px}
+  .btn{background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:13px 24px;
+    font-weight:600;text-decoration:none;display:inline-block;cursor:pointer}
+  .btn:hover{filter:brightness(1.07)}
+  .btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+  .stamp{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.72rem;color:var(--soft);letter-spacing:.04em}
 
-        <label class="photo-label">
-          📷 Photo
-          <input type="file" id="entry-photo" accept="image/*" hidden />
-        </label>
+  section{padding:44px 0;border-top:1px solid var(--line)}
+  h2{font-family:"Fraunces",Georgia,serif;font-weight:600;font-size:1.7rem;letter-spacing:-.02em;margin:0 0 6px}
+  .sub{color:var(--soft);margin:0 0 24px;max-width:46ch}
 
-        <button type="submit">Add entry</button>
+  /* live demo */
+  .demo{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+  .tierbar{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .tier{background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:7px 14px;
+    font-size:.84rem;font-weight:500;color:var(--soft);cursor:pointer}
+  .tier[aria-pressed="true"]{background:color-mix(in srgb,var(--accent) 16%,var(--surface));
+    border-color:var(--accent);color:var(--ink)}
+  .askrow{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .ask{background:color-mix(in srgb,var(--accent) 14%,var(--surface));border:1px solid color-mix(in srgb,var(--accent) 28%,var(--line));
+    border-radius:12px;padding:8px 13px;font-size:.9rem}
+  .reply{background:var(--surface-2);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+    font-size:.92rem;min-height:84px;white-space:pre-wrap}
+  .meter{display:flex;align-items:center;gap:10px;margin-top:12px;
+    font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;color:var(--soft)}
+  .track{flex:1;height:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:99px;overflow:hidden}
+  .fill{height:100%;background:var(--accent);width:0;transition:width .35s ease}
+  @media (prefers-reduced-motion: reduce){.fill{transition:none}}
+
+  /* builds grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+  .card.lead{grid-column:1/-1;display:flex;gap:18px;align-items:center;flex-wrap:wrap;
+    border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+  .card h3{margin:0 0 5px;font-size:1.02rem}
+  .card p{margin:0;color:var(--soft);font-size:.9rem}
+  .glyph{font-size:1.7rem;line-height:1}
+  .lead .glyph{font-size:2.6rem}
+  .lead div{flex:1;min-width:220px}
+
+  /* playable */
+  .play{display:flex;gap:22px;align-items:center;flex-wrap:wrap;
+    background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:20px;box-shadow:var(--shadow)}
+  canvas{background:#26232f;border-radius:12px;touch-action:none}
+  .play div{flex:1;min-width:220px}
+  .score{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.78rem;color:var(--soft);margin-top:8px}
+  .score b{color:var(--ink)}
+  .pad{display:grid;grid-template-columns:repeat(3,38px);grid-template-rows:repeat(3,38px);gap:5px;margin-top:10px}
+  .pad button{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;color:var(--ink);cursor:pointer}
+  .u{grid-area:1/2}.l{grid-area:2/1}.r{grid-area:2/3}.d{grid-area:3/2}
+
+  /* spec sheet */
+  .spec{border-top:1px solid var(--line)}
+  .row{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:16px;
+    padding:13px 0;border-bottom:1px solid var(--line);align-items:baseline}
+  .key{font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.7rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--soft)}
+  .val{font-size:.95rem}
+  @media (max-width:560px){.row{grid-template-columns:1fr;gap:2px}}
+
+  .honest{background:var(--surface-2);border:1px solid var(--line);border-left:3px solid var(--accent);
+    border-radius:12px;padding:18px 20px}
+  .honest p{margin:0 0 10px;color:var(--soft);font-size:.95rem}
+  .honest p:last-child{margin:0}
+  .honest strong{color:var(--ink)}
+
+  footer{border-top:1px solid var(--line);padding:44px 0 64px;text-align:center}
+  footer .lede{margin-bottom:20px}
+  .note{color:var(--soft);font-size:.8rem;margin-top:18px}
+</style>
+
+<header class="wrap">
+  <p class="eyebrow">Runs on nothing but your browser</p>
+  <h1>Game Studio</h1>
+  <p class="lede">Ask for a website, a 3D block world, or a game — and it appears, playable, right in the page. No sign-in, no waiting, nothing sent anywhere.</p>
+  <div class="cta">
+    <a class="btn" href="app.html">Open the app</a>
+    <a class="btn ghost" href="#builds">See what it builds</a>
+  </div>
+  <p class="stamp">Works offline · Saves to your device · Nothing to install</p>
+</header>
+
+<section class="wrap">
+  <h2>Four models, and you can feel the difference</h2>
+  <p class="sub">Pick a tier and watch the same request come back at a different standard. This demo is the real logic — press the buttons.</p>
+
+  <div class="demo">
+    <div class="tierbar" role="group" aria-label="Model">
+      <button class="tier" data-t="epic" aria-pressed="true">Epic · best</button>
+      <button class="tier" data-t="ballad" aria-pressed="false">Ballad</button>
+      <button class="tier" data-t="verse" aria-pressed="false">Verse</button>
+      <button class="tier" data-t="couplet" aria-pressed="false">Couplet · most basic</button>
+    </div>
+    <div class="askrow"><span class="ask">make me a website</span></div>
+    <div class="reply" id="reply" aria-live="polite"></div>
+    <div class="meter"><span>Detail</span><span class="track"><span class="fill" id="fill"></span></span><span id="pct">100%</span></div>
+  </div>
+</section>
+
+<section class="wrap" id="builds">
+  <h2>What it builds</h2>
+  <p class="sub">Everything opens inside the page, ready to use — and every one comes with its source in the Code tab.</p>
+  <div class="grid">
+    <div class="card lead">
+      <span class="glyph" aria-hidden="true">🧱</span>
+      <div>
+        <h3>A 3D block world</h3>
+        <p>Walk around a first-person world, break blocks and place them. On Epic you get five block types, terrain, lighting and a minimap — on Couplet, a chunky world you can only wander.</p>
       </div>
+    </div>
+    <div class="card"><span class="glyph" aria-hidden="true">🌐</span><h3>Websites</h3><p>A full page with menu, sections, pricing, a contact form and dark mode.</p></div>
+    <div class="card"><span class="glyph" aria-hidden="true">🐍</span><h3>Snake</h3><p>Keys, swipe or the on-screen pad.</p></div>
+    <div class="card"><span class="glyph" aria-hidden="true">🧱</span><h3>Breakout</h3><p>Paddle, bricks, three lives.</p></div>
+    <div class="card"><span class="glyph" aria-hidden="true">🃏</span><h3>Memory</h3><p>Eight pairs, counted moves.</p></div>
+    <div class="card"><span class="glyph" aria-hidden="true">⭕</span><h3>Tic-Tac-Toe</h3><p>Against a computer that never loses.</p></div>
+  </div>
+</section>
 
-      <img id="photo-preview" class="photo-preview" hidden alt="Selected photo preview" />
-    </form>
-
-    <section>
-      <div class="log-header">
-        <h2>Log</h2>
-        <button id="clear-log" type="button" class="link-button">Clear all</button>
+<section class="wrap">
+  <h2>Proof, not a screenshot</h2>
+  <p class="sub">This snake is running here, on this page, with no server and nothing to install. That is exactly how the app works.</p>
+  <div class="play">
+    <div>
+      <canvas id="c" width="220" height="220"></canvas>
+      <div class="pad">
+        <button class="u" data-d="0,-1" aria-label="Up">↑</button>
+        <button class="l" data-d="-1,0" aria-label="Left">←</button>
+        <button class="r" data-d="1,0" aria-label="Right">→</button>
+        <button class="d" data-d="0,1" aria-label="Down">↓</button>
       </div>
-      <ul id="log-list" class="log-list"></ul>
-      <p id="empty-state" class="empty-state">No entries yet. Add your first one above.</p>
-    </section>
-  </main>
+    </div>
+    <div>
+      <h3 style="margin:0 0 6px;font-family:Fraunces,Georgia,serif;font-size:1.15rem">Have a go</h3>
+      <p style="margin:0;color:var(--soft);font-size:.93rem">Arrow keys, a swipe, or the pad. It restarts itself when you crash.</p>
+      <p class="score">Score <b id="s">0</b> · Best <b id="hi">0</b></p>
+    </div>
+  </div>
+</section>
 
-  <script src="app.js"></script>
-</body>
-</html>
+<section class="wrap">
+  <h2>The whole thing</h2>
+  <p class="sub">A side rail switches between everything below.</p>
+  <div class="spec">
+    <div class="row"><div class="key">Models</div><div class="val">Epic, Ballad, Verse, Couplet — best to most basic. They change how it writes <em>and</em> how detailed the thing it builds comes out.</div></div>
+    <div class="row"><div class="key">Chats</div><div class="val">Open as many as you like at once, as tabs. Each keeps its own conversation and its own running game. Saved, so they come back later.</div></div>
+    <div class="row"><div class="key">Code</div><div class="val">A live editor with Run, plus an assistant that edits for you — “make it faster”, “make it green”, “explain this code”.</div></div>
+    <div class="row"><div class="key">Notes</div><div class="val">Jot notes with a mood, kept on your device.</div></div>
+    <div class="row"><div class="key">Network</div><div class="val">None. It never calls out to anything.</div></div>
+    <div class="row"><div class="key">Account</div><div class="val">None. Open the link and use it.</div></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>Built to run on your device</h2>
+  <div class="honest">
+    <p><strong>Instant.</strong> No sign-in, no server to wait on, no permission prompts. Open the link and it is already working.</p>
+    <p><strong>Private.</strong> Your chats, your notes and your code stay in your own browser. Nothing you type is sent anywhere.</p>
+    <p><strong>Yours to keep.</strong> Every website and game it makes is a complete, working file — open the Code tab, change it, run it, take it away.</p>
+  </div>
+</section>
+
+<footer class="wrap">
+  <h2>Have a look</h2>
+  <p class="lede">It opens instantly and works offline once it has loaded.</p>
+  <a class="btn" href="app.html">Open Game Studio</a>
+  <p class="note">Game Studio is a working title. The app link is private to its owner until it is shared.</p>
+</footer>
+
+<script>
+  'use strict';
+
+  /* ---- live tier demo ---- */
+  var TIERS = {
+    epic:    { pct:100, text:'Loading Website now — it is playable just below. Built full: sticky menu, hero, services, testimonial, pricing, a contact form, footer and a dark-mode toggle.\n\nControls: Scroll it, use the menu, and try the buttons — it is a live page.' },
+    ballad:  { pct:70,  text:'Sure — loading Website. Built medium: menu, hero, a services section and a footer. You can edit its code in the Code tab.' },
+    verse:   { pct:40,  text:'Loading Website. Built simple: hero, a short services list and a footer.' },
+    couplet: { pct:15,  text:'Loading Website. Built bare: just a hero section.' }
+  };
+  var reply = document.getElementById('reply'), fill = document.getElementById('fill'), pct = document.getElementById('pct');
+  function setTier(id){
+    var t = TIERS[id]; if(!t) return;
+    reply.textContent = t.text;
+    fill.style.width = t.pct + '%';
+    pct.textContent = t.pct + '%';
+    Array.prototype.forEach.call(document.querySelectorAll('.tier'), function(b){
+      b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === id));
+    });
+  }
+  Array.prototype.forEach.call(document.querySelectorAll('.tier'), function(b){
+    b.addEventListener('click', function(){ setTier(b.getAttribute('data-t')); });
+  });
+  setTier('epic');
+
+  /* ---- playable snake ---- */
+  (function(){
+    var N = 11, c = document.getElementById('c'), x = c.getContext('2d'), cell = c.width / N;
+    var sn, dir, nd, food, sc, best = 0, timer;
+    var sEl = document.getElementById('s'), hiEl = document.getElementById('hi');
+
+    function css(v){ return getComputedStyle(document.body).getPropertyValue(v).trim(); }
+    function reset(){
+      sn = [{x:5,y:5},{x:4,y:5},{x:3,y:5}]; dir=[1,0]; nd=[1,0]; sc=0; sEl.textContent='0';
+      place(); clearInterval(timer); timer = setInterval(tick, 150); draw();
+    }
+    function place(){
+      do { food = {x:(Math.random()*N)|0, y:(Math.random()*N)|0}; }
+      while (sn.some(function(p){ return p.x===food.x && p.y===food.y; }));
+    }
+    function setDir(d){ if(d[0]===-dir[0] && d[1]===-dir[1]) return; nd = d; }
+    function tick(){
+      dir = nd;
+      var h = {x:sn[0].x+dir[0], y:sn[0].y+dir[1]};
+      if (h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(function(p){return p.x===h.x&&p.y===h.y;})){
+        if (sc > best){ best = sc; hiEl.textContent = best; }
+        reset(); return;
+      }
+      sn.unshift(h);
+      if (h.x===food.x && h.y===food.y){ sc++; sEl.textContent = sc; place(); } else sn.pop();
+      draw();
+    }
+    function draw(){
+      x.fillStyle = '#26232f'; x.fillRect(0,0,c.width,c.height);
+      x.fillStyle = css('--accent') || '#d99a4e';
+      x.beginPath(); x.arc((food.x+0.5)*cell,(food.y+0.5)*cell,cell*0.3,0,7); x.fill();
+      x.fillStyle = '#ece8df';
+      sn.forEach(function(p,i){ x.globalAlpha = i ? 0.8 : 1; x.fillRect(p.x*cell+1,p.y*cell+1,cell-2,cell-2); });
+      x.globalAlpha = 1;
+    }
+    window.addEventListener('keydown', function(e){
+      var m = {ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+      if (m[e.key]){ e.preventDefault(); setDir(m[e.key]); }
+    });
+    Array.prototype.forEach.call(document.querySelectorAll('.pad button'), function(b){
+      b.addEventListener('click', function(){ setDir(b.getAttribute('data-d').split(',').map(Number)); });
+    });
+    var ts = null;
+    c.addEventListener('touchstart', function(e){ ts = e.touches[0]; }, {passive:true});
+    c.addEventListener('touchend', function(e){
+      if(!ts) return;
+      var t = e.changedTouches[0], dx = t.clientX-ts.clientX, dy = t.clientY-ts.clientY;
+      if (Math.abs(dx) > Math.abs(dy)) setDir([dx>0?1:-1,0]); else setDir([0,dy>0?1:-1]);
+      ts = null;
+    }, {passive:true});
+    reset();
+  })();
+</script>
+</body></html>

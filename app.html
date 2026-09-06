@@ -1,0 +1,1966 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head><body>
+<title>Game Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Work+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eeece5; --surface: #fbfaf6; --surface-2: #f3f0e8;
+    --ink: #232220; --ink-soft: #6b665c; --border: #ddd8cb;
+    --accent: #a8712f; --accent-ink: #fffaf1;
+    --mood-rough: #75808a; --mood-low: #a08356; --mood-good: #b98a3d; --mood-great: #c76a2f;
+    --shadow: 0 1px 2px rgba(35, 30, 20, 0.06), 0 8px 24px -12px rgba(35, 30, 20, 0.18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #17151f; --surface: #201e29; --surface-2: #26232f;
+      --ink: #ece8df; --ink-soft: #a39c8f; --border: #35323f;
+      --accent: #d99a4e; --accent-ink: #1c1409;
+      --mood-rough: #8b98a3; --mood-low: #b89b74; --mood-good: #d9ab5c; --mood-great: #e58a4c;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 32px -14px rgba(0, 0, 0, 0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #17151f; --surface: #201e29; --surface-2: #26232f;
+    --ink: #ece8df; --ink-soft: #a39c8f; --border: #35323f;
+    --accent: #d99a4e; --accent-ink: #1c1409;
+    --mood-rough: #8b98a3; --mood-low: #b89b74; --mood-good: #d9ab5c; --mood-great: #e58a4c;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 12px 32px -14px rgba(0, 0, 0, 0.55);
+  }
+
+  * { box-sizing: border-box; }
+  /* Class rules that set `display` would otherwise beat the `hidden` attribute,
+     leaving invisible overlays on top of the page swallowing clicks. */
+  [hidden] { display: none !important; }
+  html, body { background: var(--bg); }
+  body { margin: 0; font-family: "Work Sans", ui-sans-serif, system-ui, sans-serif; color: var(--ink); }
+  button, textarea, input { font: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- shell: left rail + view area ---------- */
+  .shell { display: grid; grid-template-columns: 78px 1fr; min-height: 100vh; }
+
+  .rail {
+    background: var(--surface); border-right: 1px solid var(--border);
+    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    padding: 16px 8px; position: sticky; top: 0; height: 100vh;
+  }
+  .rail-brand {
+    width: 36px; height: 36px; border-radius: 10px; background: var(--accent); color: var(--accent-ink);
+    display: grid; place-items: center; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 1.1rem;
+    margin-bottom: 12px; flex-shrink: 0;
+  }
+  .rail-item {
+    position: relative; width: 60px; display: flex; flex-direction: column; align-items: center; gap: 4px;
+    padding: 9px 4px; border: none; background: none; border-radius: 12px; color: var(--ink-soft); cursor: pointer;
+    font-size: 0.62rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    transition: background 0.14s ease, color 0.14s ease;
+  }
+  .rail-item .ic { font-size: 1.2rem; line-height: 1; }
+  .rail-item:hover { color: var(--ink); }
+  .rail-item[aria-selected="true"] { background: var(--surface-2); color: var(--ink); }
+  .rail-item[aria-selected="true"]::before {
+    content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%);
+    width: 3px; height: 22px; border-radius: 2px; background: var(--accent);
+  }
+  .rail-item .updot { position: absolute; top: 7px; right: 10px; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+  .rail-item .updot[hidden] { display: none; }
+
+  .view-area { min-height: 100vh; display: flex; }
+  .view { flex: 1; min-width: 0; }
+  .view[hidden] { display: none; }
+
+  /* ---------- Normal (chat) view ---------- */
+  .main { display: flex; flex-direction: column; min-height: 100vh; padding: 0 24px 28px; }
+  .main-inner { width: 100%; max-width: 760px; margin: 0 auto; flex: 1; display: flex; flex-direction: column; }
+
+  .hero { text-align: center; padding: clamp(40px, 12vh, 120px) 0 28px; }
+  .hero.is-compact { padding: 22px 0 18px; text-align: left; }
+  .hero-eyebrow { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  .hero h1 { margin: 0; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: clamp(1.9rem, 4.5vw, 2.8rem); letter-spacing: -0.015em; text-wrap: balance; }
+  .hero.is-compact h1 { font-size: 1.5rem; }
+  .hero.is-compact .hero-eyebrow { margin-bottom: 6px; }
+  .hero p { margin: 12px auto 0; max-width: 44ch; color: var(--ink-soft); font-size: 1rem; line-height: 1.55; }
+  .hero.is-compact p { display: none; }
+
+  .chat-tabs {
+    display: flex; align-items: center; gap: 6px; padding: 14px 0 0;
+    overflow-x: auto; scrollbar-width: thin;
+  }
+  .chat-tab {
+    display: flex; align-items: center; flex-shrink: 0;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 3px 4px 3px 12px; max-width: 220px;
+  }
+  .chat-tab.active { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--surface)); }
+  .chat-tab-label {
+    background: none; border: none; cursor: pointer; color: var(--ink-soft);
+    font-size: 0.82rem; padding: 4px 2px; max-width: 170px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .chat-tab.active .chat-tab-label { color: var(--ink); font-weight: 500; }
+  .chat-tab-close {
+    background: none; border: none; cursor: pointer; color: var(--ink-soft);
+    font-size: 1rem; line-height: 1; padding: 3px 7px; border-radius: 50%;
+  }
+  .chat-tab-close:hover { color: var(--ink); background: var(--surface-2); }
+  .chat-tab-new {
+    flex-shrink: 0; background: none; border: 1px dashed var(--border); border-radius: 999px;
+    color: var(--ink-soft); font-size: 1rem; line-height: 1; cursor: pointer; padding: 7px 13px;
+  }
+  .chat-tab-new:hover { color: var(--ink); border-color: var(--accent); }
+
+  .gm-chat { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 16px; }
+  .gm-message { max-width: 78%; padding: 10px 13px; border-radius: 13px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; }
+  .gm-message--user { align-self: flex-end; background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+  .gm-message--ai { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); color: var(--ink-soft); }
+
+  .composer { background: var(--surface); border: 1px solid var(--border); border-radius: 18px; padding: 14px; box-shadow: var(--shadow); }
+  textarea { width: 100%; resize: vertical; color: var(--ink); background: var(--surface-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; line-height: 1.5; font-size: 0.9rem; }
+  .composer textarea { background: transparent; border: none; padding: 4px 6px; min-height: 46px; font-size: 1rem; }
+  .composer textarea:focus-visible { outline: none; }
+  .composer-footer { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .mode-select {
+    flex-shrink: 0; background: var(--surface-2); color: var(--ink-soft);
+    border: 1px solid var(--border); border-radius: 999px; padding: 6px 10px;
+    font-size: 0.78rem; cursor: pointer;
+  }
+  .mode-select:hover { color: var(--ink); }
+
+  .composer-status { flex: 1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.72rem; color: var(--ink-soft); }
+  .stop-btn { font-size: 0.82rem; color: var(--ink-soft); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  .stop-btn:hover { color: var(--ink); }
+  .send-btn { font-weight: 600; font-size: 0.9rem; color: var(--accent-ink); background: var(--accent); border: none; border-radius: 10px; padding: 9px 18px; cursor: pointer; }
+  .send-btn:hover { filter: brightness(1.06); }
+  .send-btn:disabled, .composer textarea:disabled { opacity: 0.55; cursor: default; }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 16px; }
+  .example-chip { font-size: 0.82rem; color: var(--ink-soft); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 7px 14px; cursor: pointer; }
+  .example-chip:hover { color: var(--ink); border-color: var(--accent); }
+
+  .stage { margin-top: 18px; position: relative; }
+  .stage.is-loading .frame { opacity: 0.4; transition: opacity 0.2s ease; }
+  .frame { display: block; width: 100%; height: 460px; border: 1px solid var(--border); border-radius: 16px; background: #fff; box-shadow: var(--shadow); }
+  /* On touch screens the game would otherwise eat every swipe, trapping the page.
+     It starts locked so you can scroll; tap once to play, and re-lock to scroll on. */
+  .play-shield {
+    position: absolute; inset: 0; z-index: 3; display: grid; place-items: center;
+    border: none; border-radius: 16px; cursor: pointer; padding: 0;
+    background: color-mix(in srgb, var(--ink) 20%, transparent);
+  }
+  .play-shield span {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 999px;
+    padding: 9px 18px; font-size: 0.86rem; font-weight: 600; color: var(--ink); box-shadow: var(--shadow);
+  }
+  .relock-btn {
+    display: block; margin: 10px auto 0; background: none; border: 1px solid var(--border);
+    border-radius: 999px; padding: 7px 14px; font-size: 0.78rem; color: var(--ink-soft); cursor: pointer;
+  }
+  .relock-btn:hover { color: var(--ink); border-color: var(--accent); }
+
+  .building { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; border-radius: 16px; background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--ink-soft); font-size: 0.92rem; text-align: center; padding: 20px; z-index: 2; }
+  .building-spinner { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--accent); animation: gm-spin 0.8s linear infinite; }
+  @keyframes gm-spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .building-spinner { animation: none; } }
+  .unavailable-note { margin-top: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px 18px; color: var(--ink-soft); font-size: 0.9rem; line-height: 1.5; }
+
+  /* ---------- Notes / Code views ---------- */
+  .panel { width: 100%; max-width: 640px; margin: 0 auto; padding: clamp(32px, 8vh, 72px) 24px 40px; display: flex; flex-direction: column; min-height: 100vh; }
+  .panel-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 18px; }
+  .panel-head h1 { margin: 0; font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 1.7rem; }
+  .panel-head .meta { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.78rem; color: var(--ink-soft); }
+  .panel-head .link { background: none; border: none; color: var(--accent); font-size: 0.82rem; cursor: pointer; padding: 0; }
+  .panel-head .link:hover { text-decoration: underline; }
+
+  .note-composer { display: flex; flex-direction: column; gap: 10px; margin-bottom: 18px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; box-shadow: var(--shadow); }
+  .note-composer textarea { min-height: 60px; }
+  .mood-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .mood-btn { font-size: 0.8rem; font-weight: 500; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 4px 8px 18px; cursor: pointer; position: relative; }
+  .mood-btn::before { content: ""; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 7px; height: 7px; border-radius: 50%; background: var(--dot); }
+  .mood-btn[data-color="rough"] { --dot: var(--mood-rough); }
+  .mood-btn[data-color="low"] { --dot: var(--mood-low); }
+  .mood-btn[data-color="good"] { --dot: var(--mood-good); }
+  .mood-btn[data-color="great"] { --dot: var(--mood-great); }
+  .mood-btn[aria-pressed="true"] { color: var(--ink); border-color: var(--dot); background: color-mix(in srgb, var(--dot) 14%, var(--surface-2)); }
+  .note-save { align-self: flex-start; font-weight: 600; font-size: 0.88rem; color: var(--accent-ink); background: var(--accent); border: none; border-radius: 8px; padding: 9px 18px; cursor: pointer; }
+  .note-save:hover { filter: brightness(1.06); }
+
+  .note-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 9px; flex: 1; }
+  .note { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--dot, var(--border)); border-radius: 10px; padding: 11px 13px; }
+  .note-meta { display: flex; gap: 8px; align-items: baseline; margin-bottom: 4px; }
+  .note-mood { font-size: 0.74rem; font-weight: 600; color: var(--dot); }
+  .note-time { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.7rem; color: var(--ink-soft); }
+  .note-text { margin: 0; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-break: break-word; }
+  .note-delete { background: none; border: none; color: var(--ink-soft); font-size: 0.72rem; cursor: pointer; padding: 2px 0 0; margin-left: auto; }
+  .note-delete:hover { color: var(--ink); }
+  .notes-empty, .code-empty { color: var(--ink-soft); font-size: 0.9rem; font-style: italic; font-family: "Fraunces", Georgia, serif; padding: 8px 2px; }
+
+  .chat-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 9px; overflow-y: auto; flex: 1; }
+  .chat-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; cursor: pointer;
+  }
+  .chat-item:hover { border-color: var(--accent); }
+  .chat-item[aria-current="true"] { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, var(--surface)); }
+  .chat-item .t { flex: 1; min-width: 0; }
+  .chat-item .title { font-size: 0.92rem; font-weight: 500; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chat-item .sub { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.68rem; color: var(--ink-soft); margin-top: 2px; }
+  .chat-del { background: none; border: none; color: var(--ink-soft); font-size: 0.72rem; cursor: pointer; padding: 4px; flex-shrink: 0; }
+  .chat-del:hover { color: var(--ink); }
+
+  .code-actions { display: flex; align-items: center; gap: 14px; }
+
+  .code-cmd { display: flex; gap: 8px; margin-bottom: 10px; }
+  .code-cmd input {
+    flex: 1; min-width: 0; background: var(--surface); color: var(--ink);
+    border: 1px solid var(--border); border-radius: 10px; padding: 10px 13px; font-size: 0.88rem;
+  }
+  .assistant-box {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 14px; margin-bottom: 16px; box-shadow: var(--shadow);
+  }
+  .assistant-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 10px;
+    font-family: "Fraunces", Georgia, serif; font-weight: 600; font-size: 1rem;
+  }
+  .assistant-head .badge {
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.58rem;
+    letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft);
+    border: 1px solid var(--border); border-radius: 999px; padding: 2px 7px;
+  }
+  .code-chat { display: flex; flex-direction: column; gap: 8px; max-height: 230px; overflow-y: auto; margin-bottom: 10px; }
+  .code-msg-b { max-width: 88%; padding: 8px 11px; border-radius: 11px; font-size: 0.85rem; line-height: 1.45; white-space: pre-wrap; }
+  .code-msg-b.user { align-self: flex-end; background: color-mix(in srgb, var(--accent) 16%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border)); }
+  .code-msg-b.ai { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--border); color: var(--ink-soft); }
+
+  .code-editor {
+    flex: 1; min-height: 220px; resize: vertical; width: 100%;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.72rem; line-height: 1.55;
+    color: var(--ink); tab-size: 2; white-space: pre; overflow-wrap: normal; overflow-x: auto;
+  }
+
+  .code-foot { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 10px; flex-wrap: wrap; }
+  .code-msg { font-family: "IBM Plex Mono", ui-monospace, monospace; font-size: 0.72rem; color: var(--accent); }
+  .code-hint { font-size: 0.74rem; color: var(--ink-soft); }
+
+  .code-preview {
+    display: block; width: 100%; height: 300px; margin-top: 12px;
+    border: 1px solid var(--border); border-radius: 12px; background: #fff; box-shadow: var(--shadow);
+  }
+
+  @media (max-width: 720px) {
+    .shell { grid-template-columns: 66px 1fr; }
+    .rail-item { width: 50px; font-size: 0.56rem; }
+    .main { min-height: 0; padding: 0 16px 24px; }
+    .panel { min-height: 0; padding: 28px 16px 32px; }
+    .hero { padding: 30px 0 18px; }
+    .frame { height: 62vh; min-height: 300px; }
+    .code-preview { height: 46vh; min-height: 220px; }
+  }
+</style>
+
+<div class="shell">
+  <!-- ===================== LEFT RAIL ===================== -->
+  <nav class="rail" aria-label="Views">
+    <div class="rail-brand" title="Game Studio">G</div>
+    <button class="rail-item" type="button" data-view="code" aria-selected="false">
+      <span class="ic" aria-hidden="true">&lt;/&gt;</span>Code<span class="updot" id="code-updot" hidden aria-hidden="true"></span>
+    </button>
+    <button class="rail-item" type="button" data-view="normal" aria-selected="true">
+      <span class="ic" aria-hidden="true">💬</span>Normal
+    </button>
+    <button class="rail-item" type="button" data-view="chats" aria-selected="false">
+      <span class="ic" aria-hidden="true">🗂️</span>Chats
+    </button>
+    <button class="rail-item" type="button" data-view="notes" aria-selected="false">
+      <span class="ic" aria-hidden="true">📝</span>Notes
+    </button>
+  </nav>
+
+  <!-- ===================== VIEWS ===================== -->
+  <div class="view-area">
+    <!-- Normal (chat) -->
+    <section id="view-normal" class="view">
+      <main class="main">
+        <div class="main-inner">
+          <div id="chat-tabs" class="chat-tabs" aria-label="Open chats"></div>
+          <div id="hero" class="hero">
+            <p class="hero-eyebrow">AI assistant</p>
+            <h1>What do you want to play?</h1>
+            <p>Ask me for a game and I’ll load it right here. I can also do math, tell the time, flip a coin, or tell you a joke — type “help” to see everything.</p>
+          </div>
+
+          <div id="gm-chat" class="gm-chat"></div>
+
+          <form id="gm-form" class="composer">
+            <textarea id="gm-input" rows="1" placeholder="Ask for a game… or type “help”" required></textarea>
+            <div class="composer-footer">
+              <select id="mode-select" class="mode-select" aria-label="Model"
+                      title="Best at the top, most basic at the bottom. These are tiers of the built-in bot, not different AIs.">
+                <option value="epic">Epic · best</option>
+                <option value="ballad" selected>Ballad</option>
+                <option value="verse">Verse</option>
+                <option value="couplet">Couplet · most basic</option>
+              </select>
+              <span id="gm-status" class="composer-status" aria-live="polite"></span>
+              <button id="gm-new" type="button" class="stop-btn" hidden>New chat</button>
+              <button id="gm-stop" type="button" class="stop-btn" hidden>Stop</button>
+              <button id="gm-submit" type="submit" class="send-btn">Send</button>
+            </div>
+          </form>
+
+          <div id="gm-examples" class="examples">
+            <button type="button" class="example-chip">Play snake</button>
+            <button type="button" class="example-chip">Play breakout</button>
+            <button type="button" class="example-chip">Tell me a joke</button>
+            <button type="button" class="example-chip">help</button>
+          </div>
+
+          <div id="gm-stage" class="stage" hidden>
+            <button type="button" id="gm-shield" class="play-shield" hidden><span>Tap to play</span></button>
+            <div id="gm-building" class="building" hidden>
+              <span class="building-spinner" aria-hidden="true"></span>
+              <span id="gm-building-text">Building your game…</span>
+            </div>
+            <iframe id="gm-frame" class="frame" sandbox="allow-scripts allow-pointer-lock allow-forms" title="Generated game"></iframe>
+            <button type="button" id="gm-relock" class="relock-btn" hidden>⇕ Lock game so I can scroll</button>
+          </div>
+
+        </div>
+      </main>
+    </section>
+
+    <!-- Code -->
+    <section id="view-code" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h1>Code</h1>
+          <div class="code-actions" id="code-actions" hidden>
+            <button type="button" id="code-reset" class="link">Reset</button>
+            <button type="button" id="code-copy" class="link">Copy</button>
+            <button type="button" id="code-run" class="send-btn">Run ▸</button>
+          </div>
+        </div>
+        <div class="assistant-box">
+          <div class="assistant-head">Code assistant <span class="badge">built-in</span></div>
+          <div id="code-chat" class="code-chat"></div>
+          <form id="code-cmd" class="code-cmd">
+            <input id="code-cmd-input" type="text" autocomplete="off"
+                   placeholder="Tell me what to change — “make it faster”, or “commands”" />
+            <button type="submit" class="send-btn">Send</button>
+          </form>
+        </div>
+
+        <p id="code-empty" class="code-empty">Load a game in Normal to see and edit its code here.</p>
+        <textarea id="code-editor" class="code-editor" spellcheck="false" hidden></textarea>
+        <div class="code-foot" id="code-foot" hidden>
+          <span id="code-msg" class="code-msg"></span>
+          <span class="code-hint">Edit the code above and press Run to see it change.</span>
+        </div>
+        <iframe id="code-preview" class="code-preview" sandbox="allow-scripts allow-pointer-lock allow-forms" title="Code preview" hidden></iframe>
+      </div>
+    </section>
+
+    <!-- Chats -->
+    <section id="view-chats" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h1>Chats</h1>
+          <button type="button" id="chats-new" class="link">+ New chat</button>
+        </div>
+        <ul id="chat-list" class="chat-list"></ul>
+        <p id="chats-empty" class="notes-empty">No chats yet — say something in Normal and it’ll show up here.</p>
+      </div>
+    </section>
+
+    <!-- Notes -->
+    <section id="view-notes" class="view" hidden>
+      <div class="panel">
+        <div class="panel-head">
+          <h1>Notes</h1>
+          <span class="meta" id="notes-count">0</span>
+        </div>
+        <form id="note-composer" class="note-composer">
+          <textarea id="note-text" placeholder="Jot a quick note…" required></textarea>
+          <div class="mood-row" role="radiogroup" aria-label="Mood">
+            <button type="button" class="mood-btn" data-color="rough" aria-pressed="false">Rough</button>
+            <button type="button" class="mood-btn" data-color="low" aria-pressed="false">Low</button>
+            <button type="button" class="mood-btn" data-color="good" aria-pressed="false">Good</button>
+            <button type="button" class="mood-btn" data-color="great" aria-pressed="false">Great</button>
+          </div>
+          <button type="submit" class="note-save">Save note</button>
+        </form>
+        <ul id="note-list" class="note-list"></ul>
+        <p id="notes-empty" class="notes-empty">No notes yet.</p>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+  'use strict';
+
+  /* ======================= VIEW RAIL ======================= */
+  function switchView(name) {
+    document.querySelectorAll('.rail-item').forEach(t => t.setAttribute('aria-selected', String(t.dataset.view === name)));
+    document.getElementById('view-normal').hidden = name !== 'normal';
+    document.getElementById('view-code').hidden = name !== 'code';
+    document.getElementById('view-chats').hidden = name !== 'chats';
+    document.getElementById('view-notes').hidden = name !== 'notes';
+    if (name === 'code') document.getElementById('code-updot').hidden = true;
+  }
+  function currentView() {
+    const sel = document.querySelector('.rail-item[aria-selected="true"]');
+    return sel ? sel.dataset.view : 'normal';
+  }
+  document.querySelectorAll('.rail-item').forEach(t => t.addEventListener('click', () => switchView(t.dataset.view)));
+
+  /* ======================= NOTES ======================= */
+  const STORAGE_KEY = 'lifecoach:log';
+  const LOG_MAX_ENTRIES = 60;
+  const MOOD_LABELS = { rough: 'Rough', low: 'Low', good: 'Good', great: 'Great' };
+  const state = { log: [] };
+
+  function loadLog() {
+    try { const r = localStorage.getItem(STORAGE_KEY); state.log = r ? JSON.parse(r) : []; }
+    catch (e) { state.log = []; }
+  }
+  function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state.log)); }
+    catch (e) { console.warn('Storage full or unavailable', e); }
+  }
+  function saveEntry(entry) { state.log.unshift(entry); state.log = state.log.slice(0, LOG_MAX_ENTRIES); persist(); }
+  function deleteEntry(id) { state.log = state.log.filter(e => e.id !== id); persist(); }
+  function timeLabel(ts) { return new Date(ts).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }); }
+
+  function renderNotes() {
+    const list = document.getElementById('note-list');
+    const empty = document.getElementById('notes-empty');
+    document.getElementById('notes-count').textContent = state.log.length + (state.log.length === 1 ? ' note' : ' notes');
+    list.innerHTML = '';
+    empty.hidden = state.log.length > 0;
+    for (const entry of state.log) {
+      const li = document.createElement('li');
+      li.className = 'note';
+      if (entry.mood) li.style.setProperty('--dot', `var(--mood-${entry.mood})`);
+      const meta = document.createElement('div');
+      meta.className = 'note-meta';
+      if (entry.mood) { const m = document.createElement('span'); m.className = 'note-mood'; m.textContent = MOOD_LABELS[entry.mood] || entry.mood; meta.appendChild(m); }
+      const t = document.createElement('span'); t.className = 'note-time'; t.textContent = timeLabel(entry.timestamp); meta.appendChild(t);
+      const del = document.createElement('button'); del.type = 'button'; del.className = 'note-delete'; del.textContent = 'Delete';
+      del.addEventListener('click', () => { deleteEntry(entry.id); renderNotes(); });
+      meta.appendChild(del);
+      li.appendChild(meta);
+      const text = document.createElement('p'); text.className = 'note-text'; text.textContent = entry.text; li.appendChild(text);
+      list.appendChild(li);
+    }
+  }
+
+  function initNotes() {
+    const form = document.getElementById('note-composer');
+    const textInput = document.getElementById('note-text');
+    const moodButtons = Array.from(document.querySelectorAll('.mood-btn'));
+    let selectedMood = null;
+    moodButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const isSame = selectedMood === btn.dataset.color;
+        moodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+        selectedMood = isSame ? null : btn.dataset.color;
+        if (selectedMood) btn.setAttribute('aria-pressed', 'true');
+      });
+    });
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const text = textInput.value.trim();
+      if (!text) return;
+      saveEntry({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, timestamp: Date.now(), text, mood: selectedMood || undefined });
+      renderNotes();
+      form.reset();
+      moodButtons.forEach(b => b.setAttribute('aria-pressed', 'false'));
+      selectedMood = null;
+    });
+    loadLog();
+    renderNotes();
+  }
+  initNotes();
+
+  /* ======================= CODE WORKSPACE ======================= */
+  // The Code view is a real editor: change the game's source and run it live.
+  let originalGameHtml = null;
+
+  function codeMsg(text) {
+    const el = document.getElementById('code-msg');
+    el.textContent = text;
+    if (text) setTimeout(() => { if (el.textContent === text) el.textContent = ''; }, 2500);
+  }
+
+  function updateCode(html) {
+    const editor = document.getElementById('code-editor');
+    const empty = document.getElementById('code-empty');
+    const actions = document.getElementById('code-actions');
+    const foot = document.getElementById('code-foot');
+    const preview = document.getElementById('code-preview');
+
+    if (html) {
+      editor.value = html;
+      originalGameHtml = html;
+      accentHex = '#d99a4e';
+      preview.srcdoc = html;
+      editor.hidden = false; actions.hidden = false; foot.hidden = false; preview.hidden = false;
+      empty.hidden = true;
+    } else {
+      editor.value = '';
+      originalGameHtml = null;
+      accentHex = '#d99a4e';
+      preview.removeAttribute('srcdoc');
+      editor.hidden = true; actions.hidden = true; foot.hidden = true; preview.hidden = true;
+      empty.hidden = false;
+    }
+    document.getElementById('code-updot').hidden = !(html && currentView() !== 'code');
+  }
+
+  function runCode() {
+    const html = document.getElementById('code-editor').value;
+    if (!html.trim()) { codeMsg('Nothing to run.'); return; }
+    document.getElementById('code-preview').srcdoc = html;   // preview here
+    document.getElementById('gm-frame').srcdoc = html;       // and the main stage
+    document.getElementById('gm-stage').hidden = false;
+    currentGameHtml = html;
+    gameBuilt = true;
+    codeMsg('Ran your changes ✓');
+  }
+
+  document.getElementById('code-run').addEventListener('click', runCode);
+
+  /* ---------- built-in code commands ----------
+     Not an AI: a fixed set of edits it knows how to make to the code. */
+  const COLORS = {
+    green: '#22c55e', blue: '#3b82f6', red: '#ef4444', purple: '#a855f7',
+    pink: '#ec4899', orange: '#f97316', yellow: '#eab308', teal: '#14b8a6',
+    white: '#ffffff', gold: '#d99a4e',
+  };
+  const CMD_HELP = 'Commands I know:\n\nGetting code in\n• "load my game" — bring over the game from Normal\n• "start a blank page" — a starter file to build on\n\nUnderstanding it\n• "explain this code" — what the file does\n\nChanging it\n• "make it faster" / "slower"\n• "make it green" (green, blue, red, purple, pink, orange, yellow, teal, gold)\n• "make it bigger" / "smaller"\n• "light mode" / "dark mode"\n• "replace X with Y"\n\nI am not an AI — these are fixed things I know how to do. Anything else, edit the code yourself and press Run.';
+
+  let accentHex = '#d99a4e';
+  let currentGameName = null;
+  const clamp = (n, lo, hi) => Math.max(lo, Math.min(hi, n));
+
+  const STARTER = `<!doctype html><html><head><meta charset="utf-8"><title>My Page</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}canvas{background:#26232f;border-radius:12px}
+button{background:#d99a4e;color:#1c1409;border:0;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:10px}
+</style></head><body><div class="w">
+<h2 id="t">Blank canvas</h2>
+<canvas id="c" width="300" height="220"></canvas>
+<div><button id="b">Click me</button></div>
+</div><script>
+var c=document.getElementById('c'),x=c.getContext('2d'),n=0;
+function draw(){x.fillStyle='#26232f';x.fillRect(0,0,c.width,c.height);
+x.fillStyle='#d99a4e';x.beginPath();x.arc(150,110,20+n*4,0,7);x.fill();}
+document.getElementById('b').onclick=function(){n=(n+1)%8;document.getElementById('t').textContent='Clicked '+n;draw()};
+draw();
+<\/script></body></html>`;
+
+  function explainCode(src) {
+    const lines = src.split('\n').length;
+    const kb = Math.round(src.length / 1024 * 10) / 10;
+    const fns = Array.from(src.matchAll(/function\s+([A-Za-z_$][\w$]*)/g)).map(m => m[1]);
+    const bits = [];
+    if (/<canvas/i.test(src)) bits.push('draws on a canvas');
+    if (/keydown/.test(src)) bits.push('listens for key presses');
+    if (/touch(start|end|move)/.test(src)) bits.push('supports touch');
+    if (/setInterval/.test(src)) bits.push('runs on a timer');
+    if (/requestAnimationFrame/.test(src)) bits.push('runs an animation loop');
+    if (/Math\.random/.test(src)) bits.push('uses randomness');
+    const out = ['This file is ' + lines + ' lines (' + kb + ' KB).'];
+    if (bits.length) out.push('It ' + bits.join(', ') + '.');
+    if (fns.length) out.push('Functions: ' + fns.slice(0, 12).join(', ') + (fns.length > 12 ? '…' : '') + '.');
+    out.push('Everything is in this one file — edit it above and press Run.');
+    return out.join('\n');
+  }
+
+  function codeCommand(cmdRaw, src) {
+    const t = cmdRaw.toLowerCase().trim();
+    if (!t) return { msg: '' };
+
+    if (/^(help|commands|what can you do)/.test(t)) return { msg: CMD_HELP };
+
+    // replace X with Y
+    const rep = cmdRaw.match(/replace\s+(.+?)\s+with\s+(.+)$/i);
+    if (rep) {
+      const from = rep[1].trim().replace(/^["']|["']$/g, '');
+      const to = rep[2].trim().replace(/^["']|["']$/g, '');
+      if (!src.includes(from)) return { msg: 'I could not find "' + from + '" in the code.' };
+      const count = src.split(from).length - 1;
+      return { src: src.split(from).join(to), msg: 'Replaced ' + count + ' × "' + from + '" with "' + to + '".' };
+    }
+
+    // speed
+    if (/faster|speed up|quicker/.test(t) || /slower|slow down/.test(t)) {
+      const faster = /faster|speed up|quicker/.test(t);
+      const mi = src.match(/setInterval\(tick,(\d+)\)/);
+      if (mi) {
+        const cur = parseInt(mi[1], 10);
+        const next = clamp(Math.round(faster ? cur * 0.72 : cur * 1.38), 40, 700);
+        if (next === cur) return { msg: 'It is already as ' + (faster ? 'fast' : 'slow') + ' as I can set it.' };
+        return { src: src.replace(mi[0], 'setInterval(tick,' + next + ')'), msg: 'Speed set to ' + next + 'ms per step (was ' + cur + 'ms).' };
+      }
+      const mv = src.match(/vx=([\d.]+)\*/);
+      if (mv) {
+        const f = faster ? 1.3 : 0.77;
+        let out = src.replace(/vx=([\d.]+)\*/, (s, n) => 'vx=' + (Math.round(parseFloat(n) * f * 100) / 100) + '*');
+        out = out.replace(/vy=-([\d.]+)/, (s, n) => 'vy=-' + (Math.round(parseFloat(n) * f * 100) / 100));
+        return { src: out, msg: 'Made the ball ' + (faster ? 'faster' : 'slower') + '.' };
+      }
+      return { msg: 'This game does not have a speed I know how to change.' };
+    }
+
+    // colour
+    const colorWord = Object.keys(COLORS).find(c => new RegExp('\\b' + c + '\\b').test(t));
+    if (colorWord && /(colou?r|make it|turn it|change)/.test(t)) {
+      const next = COLORS[colorWord];
+      if (!src.includes(accentHex)) return { msg: 'I cannot find the main colour in this code any more.' };
+      const out = src.split(accentHex).join(next);
+      accentHex = next;
+      return { src: out, msg: 'Main colour is now ' + colorWord + ' (' + next + ').' };
+    }
+
+    // size
+    if (/bigger|larger|smaller|tiny/.test(t)) {
+      const bigger = /bigger|larger/.test(t);
+      const mc = src.match(/width="(\d+)" height="(\d+)"/);
+      if (mc) {
+        const w = clamp(Math.round(parseInt(mc[1], 10) * (bigger ? 1.2 : 0.83)), 160, 520);
+        const h = clamp(Math.round(parseInt(mc[2], 10) * (bigger ? 1.2 : 0.83)), 160, 560);
+        return { src: src.replace(mc[0], 'width="' + w + '" height="' + h + '"'), msg: 'Resized the board to ' + w + '×' + h + '.' };
+      }
+      return { msg: 'This game does not have a size I know how to change.' };
+    }
+
+    // light / dark
+    if (/light mode|make it light/.test(t)) {
+      if (!src.includes('#17151f')) return { msg: 'It is already light.' };
+      return { src: src.split('#17151f').join('#f4f1ea').split('#ece8df').join('#232220').split('#26232f').join('#e7e2d6'), msg: 'Switched to a light theme.' };
+    }
+    if (/dark mode|make it dark/.test(t)) {
+      if (!src.includes('#f4f1ea')) return { msg: 'It is already dark.' };
+      return { src: src.split('#f4f1ea').join('#17151f').split('#232220').join('#ece8df').split('#e7e2d6').join('#26232f'), msg: 'Switched back to the dark theme.' };
+    }
+
+    return { msg: 'I do not know that one. Type "commands" to see what I can change — or edit the code yourself and press Run.' };
+  }
+
+  function addCodeMsg(role, text) {
+    const chat = document.getElementById('code-chat');
+    const div = document.createElement('div');
+    div.className = 'code-msg-b ' + role;
+    div.textContent = text;
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    return div;
+  }
+
+  document.getElementById('code-cmd').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const inputEl = document.getElementById('code-cmd-input');
+    const editor = document.getElementById('code-editor');
+    const cmd = inputEl.value.trim();
+    if (!cmd) return;
+
+    addCodeMsg('user', cmd);
+    inputEl.value = '';
+    const t = cmd.toLowerCase();
+
+    // Bring the game over from Normal — only when actually asked.
+    if (/(load|open|bring|import|edit|change|work on|modify).*(game|it|this|code)|my game/.test(t) && !/faster|slower|colou?r|green|blue|red|purple|pink|orange|yellow|teal|gold|bigger|smaller|light mode|dark mode|replace/.test(t)) {
+      if (!currentGameHtml) {
+        addCodeMsg('ai', 'There is no game in Normal yet. Ask for one over there (like "play snake"), then say "load my game" and I will bring the code here.');
+      } else {
+        updateCode(currentGameHtml);
+        addCodeMsg('ai', 'Loaded ' + (currentGameName || 'your game') + '. The code is below — tell me what to change, or edit it yourself and press Run.');
+      }
+      inputEl.focus();
+      return;
+    }
+
+    // Start from a blank page.
+    if (/blank|from scratch|new (page|file|project)|starter|template/.test(t)) {
+      updateCode(STARTER);
+      addCodeMsg('ai', 'Started you a blank page with a canvas and a button. Edit it below and press Run.');
+      inputEl.focus();
+      return;
+    }
+
+    // Explain what the loaded code does.
+    if (/explain|what does (this|it) do|how does (this|it) work|describe/.test(t)) {
+      if (!editor.value.trim()) {
+        addCodeMsg('ai', 'There is no code loaded yet. Say "load my game", or "start a blank page".');
+      } else {
+        addCodeMsg('ai', explainCode(editor.value));
+      }
+      inputEl.focus();
+      return;
+    }
+
+    // Everything else needs code to work on.
+    if (!originalGameHtml && !/^(help|commands|what can you do)/i.test(cmd)) {
+      addCodeMsg('ai', 'There is no code loaded yet. Say "load my game" to bring over the game from Normal, or "start a blank page". Type "commands" for the full list.');
+      inputEl.focus();
+      return;
+    }
+
+    const result = codeCommand(cmd, editor.value);
+    if (result.src) { editor.value = result.src; runCode(); }
+    addCodeMsg('ai', result.msg);
+    inputEl.focus();
+  });
+
+  // Opening line so the assistant is never an empty box.
+  addCodeMsg('ai', 'Hi! Say “load my game” to bring over the game from Normal, or “start a blank page” to begin something new. I can also “explain this code” and change it for you. Type “commands” for the full list.');
+
+  document.getElementById('code-reset').addEventListener('click', () => {
+    if (originalGameHtml == null) return;
+    document.getElementById('code-editor').value = originalGameHtml;
+    runCode();
+    codeMsg('Reset to the original ✓');
+  });
+
+  document.getElementById('code-copy').addEventListener('click', async () => {
+    const btn = document.getElementById('code-copy');
+    const code = document.getElementById('code-editor').value;
+    try { await navigator.clipboard.writeText(code); btn.textContent = 'Copied'; }
+    catch (e) { btn.textContent = 'Ctrl+C'; }
+    setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+  });
+
+  // Ctrl/Cmd+Enter runs, and Tab indents instead of leaving the editor.
+  document.getElementById('code-editor').addEventListener('keydown', (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); runCode(); return; }
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      const ta = e.target, s = ta.selectionStart, en = ta.selectionEnd;
+      ta.value = ta.value.slice(0, s) + '  ' + ta.value.slice(en);
+      ta.selectionStart = ta.selectionEnd = s + 2;
+    }
+  });
+
+  /* ======================= BUILT-IN GAME LIBRARY ======================= */
+  // Real, self-contained games shipped inside this page. No AI, no network, no accounts.
+
+  const G_SNAKE = `<!doctype html><html><head><meta charset="utf-8"><title>Snake</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}canvas{background:#26232f;border-radius:12px;touch-action:none}
+.hud{margin:8px 0;color:#a39c8f;font-size:14px}b{color:#ece8df}
+button{background:#d99a4e;color:#1c1409;border:0;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:8px}
+.pad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);gap:6px;justify-content:center;margin-top:10px}
+.pad button{margin:0;background:#302c3c;color:#ece8df;font-weight:400}
+.u{grid-area:1/2}.l{grid-area:2/1}.r{grid-area:2/3}.d{grid-area:3/2}p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w">
+<div class="hud">Score <b id="s">0</b></div>
+<canvas id="c" width="300" height="300"></canvas>
+<div class="pad"><button class="u" data-d="0,-1">&#94;</button><button class="l" data-d="-1,0">&lt;</button><button class="r" data-d="1,0">&gt;</button><button class="d" data-d="0,1">v</button></div>
+<div><button id="rs">Restart</button></div><p>Arrow keys / WASD, swipe, or the pad.</p>
+</div><script>
+var N=15,c=document.getElementById('c'),x=c.getContext('2d'),cell=c.width/N,sn,dir,nd,food,sc,alive,t;
+function reset(){sn=[{x:7,y:7},{x:6,y:7},{x:5,y:7}];dir=[1,0];nd=[1,0];sc=0;alive=1;document.getElementById('s').textContent=0;place();clearInterval(t);t=setInterval(tick,130);draw()}
+function place(){do{food={x:Math.floor(Math.random()*N),y:Math.floor(Math.random()*N)}}while(sn.some(function(s){return s.x==food.x&&s.y==food.y}))}
+function sd(d){if(!alive)return;if(d[0]==-dir[0]&&d[1]==-dir[1])return;nd=d}
+function tick(){dir=nd;var h={x:sn[0].x+dir[0],y:sn[0].y+dir[1]};
+if(h.x<0||h.y<0||h.x>=N||h.y>=N||sn.some(function(s){return s.x==h.x&&s.y==h.y})){alive=0;clearInterval(t);draw();return}
+sn.unshift(h);if(h.x==food.x&&h.y==food.y){sc++;document.getElementById('s').textContent=sc;place()}else sn.pop();draw()}
+function draw(){x.fillStyle='#26232f';x.fillRect(0,0,c.width,c.height);
+x.fillStyle='#d99a4e';x.beginPath();x.arc((food.x+.5)*cell,(food.y+.5)*cell,cell*.32,0,7);x.fill();
+x.fillStyle='#ece8df';sn.forEach(function(s,i){x.globalAlpha=i?0.8:1;x.fillRect(s.x*cell+1,s.y*cell+1,cell-2,cell-2)});x.globalAlpha=1;
+if(!alive){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,0,c.width,c.height);x.fillStyle='#fff';x.textAlign='center';x.font='600 22px system-ui';x.fillText('Game over',c.width/2,c.height/2-4);x.font='13px system-ui';x.fillText('Score '+sc+' - press Restart',c.width/2,c.height/2+20)}}
+document.addEventListener('keydown',function(e){var m={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0],w:[0,-1],s:[0,1],a:[-1,0],d:[1,0]},k=m[e.key]||m[(e.key||'').toLowerCase()];if(k){e.preventDefault();sd(k)}});
+Array.prototype.forEach.call(document.querySelectorAll('.pad button'),function(b){b.onclick=function(){sd(b.getAttribute('data-d').split(',').map(Number))}});
+var ts=null;c.addEventListener('touchstart',function(e){ts=e.touches[0]});
+c.addEventListener('touchend',function(e){if(!ts)return;var q=e.changedTouches[0],dx=q.clientX-ts.clientX,dy=q.clientY-ts.clientY;if(Math.abs(dx)>Math.abs(dy))sd([dx>0?1:-1,0]);else sd([0,dy>0?1:-1]);ts=null});
+document.getElementById('rs').onclick=reset;reset();
+<\/script></body></html>`;
+
+  const G_BREAKOUT = `<!doctype html><html><head><meta charset="utf-8"><title>Breakout</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}canvas{background:#26232f;border-radius:12px;touch-action:none}
+.hud{margin:8px 0;color:#a39c8f;font-size:14px}b{color:#ece8df}
+button{background:#d99a4e;color:#1c1409;border:0;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:8px}
+p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w">
+<div class="hud">Score <b id="s">0</b> &nbsp; Lives <b id="l">3</b></div>
+<canvas id="c" width="320" height="360"></canvas>
+<div><button id="rs">Restart</button></div><p>Move with the mouse, touch, or arrow keys.</p>
+</div><script>
+var c=document.getElementById('c'),x=c.getContext('2d'),W=c.width,H=c.height,pw=64,ph=10;
+var px,bx,by,vx,vy,sc,lv,br,over,raf;
+function reset(){px=W/2-pw/2;sc=0;lv=3;over=0;br=[];for(var r=0;r<5;r++)for(var k=0;k<7;k++)br.push({x:8+k*44,y:30+r*20,w:40,h:14,a:1});ball();upd();cancelAnimationFrame(raf);loop()}
+function ball(){bx=W/2;by=H-40;vx=2.2*(Math.random()<.5?1:-1);vy=-2.6}
+function upd(){document.getElementById('s').textContent=sc;document.getElementById('l').textContent=lv}
+function loop(){step();draw();raf=requestAnimationFrame(loop)}
+function step(){px=Math.max(0,Math.min(W-pw,px));if(over)return;bx+=vx;by+=vy;
+if(bx<6||bx>W-6)vx=-vx;if(by<6)vy=-vy;
+if(by>H-20&&by<H-6&&bx>px&&bx<px+pw){vy=-Math.abs(vy);vx+=((bx-(px+pw/2))/pw)*1.6}
+if(by>H){lv--;upd();if(lv<=0)over=1;else ball()}
+for(var i=0;i<br.length;i++){var b=br[i];if(b.a&&bx>b.x-4&&bx<b.x+b.w+4&&by>b.y-4&&by<b.y+b.h+4){b.a=0;vy=-vy;sc+=10;upd();break}}
+if(br.every(function(b){return !b.a}))over=2}
+function draw(){x.fillStyle='#26232f';x.fillRect(0,0,W,H);
+br.forEach(function(b){if(!b.a)return;x.fillStyle='#d99a4e';x.fillRect(b.x,b.y,b.w,b.h)});
+x.fillStyle='#ece8df';x.fillRect(px,H-16,pw,ph);x.beginPath();x.arc(bx,by,5,0,7);x.fill();
+if(over){x.fillStyle='rgba(0,0,0,.6)';x.fillRect(0,0,W,H);x.fillStyle='#fff';x.textAlign='center';x.font='600 22px system-ui';x.fillText(over==2?'You cleared it!':'Game over',W/2,H/2-4);x.font='13px system-ui';x.fillText('Score '+sc+' - press Restart',W/2,H/2+20)}}
+c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();px=e.clientX-r.left-pw/2});
+c.addEventListener('touchmove',function(e){var r=c.getBoundingClientRect();px=e.touches[0].clientX-r.left-pw/2;e.preventDefault()},{passive:false});
+document.addEventListener('keydown',function(e){if(e.key=='ArrowLeft')px-=24;if(e.key=='ArrowRight')px+=24});
+document.getElementById('rs').onclick=reset;reset();
+<\/script></body></html>`;
+
+  const G_MEMORY = `<!doctype html><html><head><meta charset="utf-8"><title>Memory Match</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}.g{display:grid;grid-template-columns:repeat(4,72px);gap:8px;justify-content:center}
+.card{height:72px;border-radius:10px;border:0;background:#d99a4e;color:transparent;font-size:30px;cursor:pointer}
+.card.f{background:#302c3c;color:#ece8df}.card.m{background:#3f6c5c;color:#fff;cursor:default}
+.hud{margin:8px 0;color:#a39c8f;font-size:14px}b{color:#ece8df}
+button.rs{background:#d99a4e;color:#1c1409;border:0;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}
+p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w">
+<div class="hud">Moves <b id="m">0</b> &nbsp; Pairs <b id="p">0</b>/8</div>
+<div class="g" id="g"></div>
+<div><button class="rs" id="rs">Restart</button></div><p>Flip two cards to find a matching pair.</p>
+</div><script>
+var E=['\\u{1F353}','\\u{1F388}','\\u{1F680}','\\u{1F433}','\\u{1F335}','\\u26A1','\\u{1F3B2}','\\u{1F36F}'],g=document.getElementById('g'),first,lock,mv,pr;
+function reset(){var d=E.concat(E).map(function(v){return{v:v}}).sort(function(){return Math.random()-.5});
+first=null;lock=0;mv=0;pr=0;document.getElementById('m').textContent=0;document.getElementById('p').textContent=0;g.innerHTML='';
+d.forEach(function(card){var b=document.createElement('button');b.className='card';b.onclick=function(){flip(b,card)};g.appendChild(b)})}
+function flip(b,card){if(lock||b.className!='card')return;b.className='card f';b.textContent=card.v;
+if(!first){first={b:b,card:card};return}
+mv++;document.getElementById('m').textContent=mv;
+if(first.card.v==card.v){first.b.className='card m';b.className='card m';first=null;pr++;document.getElementById('p').textContent=pr}
+else{lock=1;var pv=first;first=null;setTimeout(function(){pv.b.className='card';pv.b.textContent='';b.className='card';b.textContent='';lock=0},750)}}
+document.getElementById('rs').onclick=reset;reset();
+<\/script></body></html>`;
+
+  const G_TTT = `<!doctype html><html><head><meta charset="utf-8"><title>Tic-Tac-Toe</title><style>
+html,body{margin:0;height:100%;background:#17151f;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}.g{display:grid;grid-template-columns:repeat(3,84px);grid-template-rows:repeat(3,84px);gap:6px;justify-content:center}
+.c{background:#26232f;border:0;border-radius:10px;font-size:36px;font-weight:600;cursor:pointer;color:#ece8df}
+.c[data-p="X"]{color:#d99a4e}.c[data-p="O"]{color:#8b98a3}
+.hud{margin:10px 0;color:#ece8df;font-size:15px}
+button.rs{background:#d99a4e;color:#1c1409;border:0;border-radius:8px;padding:8px 16px;font:inherit;font-weight:600;cursor:pointer;margin-top:12px}
+p{color:#7a7466;font-size:12px}
+</style></head><body><div class="w">
+<div class="hud" id="m">Your move (X)</div><div class="g" id="g"></div>
+<div><button class="rs" id="rs">Restart</button></div><p>You are X. The computer plays perfectly.</p>
+</div><script>
+var L=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]],b,over,cells=[],g=document.getElementById('g');
+function reset(){b=['','','','','','','','',''];over=0;document.getElementById('m').textContent='Your move (X)';g.innerHTML='';cells=[];
+for(var i=0;i<9;i++){(function(i){var e=document.createElement('button');e.className='c';e.onclick=function(){play(i)};cells.push(e);g.appendChild(e)})(i)}render()}
+function win(s){for(var i=0;i<L.length;i++){var a=L[i];if(s[a[0]]&&s[a[0]]==s[a[1]]&&s[a[0]]==s[a[2]])return s[a[0]]}return s.indexOf('')<0?'draw':null}
+function render(){cells.forEach(function(e,i){e.textContent=b[i];e.setAttribute('data-p',b[i]);e.disabled=over||b[i]!=''})}
+function play(i){if(over||b[i])return;b[i]='X';step();if(!over){var m=best();if(m!=null)b[m]='O';step()}}
+function step(){var w=win(b);if(w){over=1;document.getElementById('m').textContent=w=='draw'?"It's a draw":(w=='X'?'You win!':'Computer wins')}render()}
+function mm(s,p){var w=win(s);if(w=='O')return{sc:1};if(w=='X')return{sc:-1};if(w=='draw')return{sc:0};
+var bt={sc:p=='O'?-2:2,mv:null};
+for(var i=0;i<9;i++){if(s[i])continue;s[i]=p;var r=mm(s,p=='O'?'X':'O').sc;s[i]='';
+if(p=='O'?r>bt.sc:r<bt.sc)bt={sc:r,mv:i}}return bt}
+function best(){return mm(b.slice(),'O').mv}
+document.getElementById('rs').onclick=reset;reset();
+<\/script></body></html>`;
+
+  // A first-person block world, built at four quality levels.
+  // Higher tiers get more block types, richer shading, terrain, and a minimap.
+  function buildBlockWorld(level) {
+    const kinds   = level >= 4 ? 5 : level >= 3 ? 3 : 1;
+    const minimap = level >= 4;
+    const shading = level >= 2;
+    const canEdit = level >= 2;
+    const trees   = level >= 3;
+    const RES     = level >= 4 ? 2 : level >= 3 ? 3 : level >= 2 ? 5 : 10;
+    const N       = level >= 3 ? 24 : 16;
+    const sky     = level >= 3;
+
+    const PAL = ['#6f9a4a', '#8a6a44', '#8e8e93', '#c2a86b', '#4a7fb5'].slice(0, kinds);
+
+    return `<!doctype html><html><head><meta charset="utf-8"><title>Block World</title><style>
+html,body{margin:0;height:100%;background:#0e0d13;color:#ece8df;font-family:system-ui,sans-serif;display:grid;place-items:center}
+.w{text-align:center}
+canvas{background:#0e0d13;border-radius:10px;image-rendering:pixelated;touch-action:none;width:min(420px,92vw)}
+.hud{margin:6px 0;color:#a39c8f;font-size:13px}b{color:#ece8df}
+.pad{display:grid;grid-template-columns:repeat(3,46px);grid-template-rows:repeat(2,46px);gap:6px;justify-content:center;margin-top:10px}
+.pad button,.act button{background:#2a2733;color:#ece8df;border:0;border-radius:8px;font:inherit;font-size:15px;cursor:pointer}
+.pad button{padding:0}
+.act{display:flex;gap:8px;justify-content:center;margin-top:8px}
+.act button{padding:9px 14px}
+.f{grid-area:1/2}.l{grid-area:2/1}.b{grid-area:2/2}.r{grid-area:2/3}
+p{color:#7a7466;font-size:12px;max-width:420px;margin:10px auto 0}
+</style></head><body><div class="w">
+<div class="hud">Blocks <b id="bc">0</b>${kinds > 1 ? ' &nbsp; Holding <b id="sel">1</b>/' + kinds : ''}</div>
+<canvas id="c" width="320" height="240"></canvas>
+${minimap ? '<canvas id="mm" width="120" height="120" style="display:block;width:120px;margin:8px auto 0;border-radius:8px"></canvas>' : ''}
+<div class="pad">
+<button class="f" data-k="w">▲</button><button class="l" data-k="a">◀</button><button class="b" data-k="s">▼</button><button class="r" data-k="d">▶</button>
+</div>
+${canEdit ? '<div class="act"><button id="mine">Break</button><button id="place">Place</button>' + (kinds > 1 ? '<button id="next">Next block</button>' : '') + '</div>' : ''}
+<p>W/S or ▲▼ to move, A/D or ◀▶ to turn.${canEdit ? ' Break and Place edit the world in front of you.' : ''}</p>
+</div><script>
+var N=${N},RES=${RES},KINDS=${kinds},PAL=${JSON.stringify(PAL)};
+var c=document.getElementById('c'),x=c.getContext('2d'),W=c.width,H=c.height;
+var map=new Array(N*N).fill(0),px=N/2+0.5,py=N/2+0.5,pa=0,sel=1,placed=0;
+function cell(a,b){if(a<0||b<0||a>=N||b>=N)return 1;return map[b*N+a]}
+function setCell(a,b,v){if(a<0||b<0||a>=N||b>=N)return;map[b*N+a]=v}
+function gen(){
+ for(var i=0;i<N;i++){setCell(i,0,1);setCell(i,N-1,1);setCell(0,i,1);setCell(N-1,i,1)}
+ for(var k=0;k<N*${trees ? 1.6 : 1.0};k++){
+  var a=1+Math.floor(Math.random()*(N-2)),b=1+Math.floor(Math.random()*(N-2));
+  if(Math.abs(a-px)<2&&Math.abs(b-py)<2)continue;
+  setCell(a,b,1+Math.floor(Math.random()*KINDS));
+ }
+ ${trees ? "for(var t=0;t<4;t++){var a=2+Math.floor(Math.random()*(N-4)),b=2+Math.floor(Math.random()*(N-4));setCell(a,b,1);setCell(a+1,b,1);setCell(a,b+1,1)}" : ''}
+}
+function shade(hex,f){
+ var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+ r=Math.max(0,Math.min(255,Math.round(r*f)));g=Math.max(0,Math.min(255,Math.round(g*f)));b=Math.max(0,Math.min(255,Math.round(b*f)));
+ return 'rgb('+r+','+g+','+b+')';
+}
+function cast(ang){
+ var dx=Math.cos(ang),dy=Math.sin(ang);
+ var mx=Math.floor(px),my=Math.floor(py);
+ var ddx=Math.abs(1/(dx||1e-9)),ddy=Math.abs(1/(dy||1e-9));
+ var sx,sy,stx,sty;
+ if(dx<0){stx=-1;sx=(px-mx)*ddx}else{stx=1;sx=(mx+1-px)*ddx}
+ if(dy<0){sty=-1;sy=(py-my)*ddy}else{sty=1;sy=(my+1-py)*ddy}
+ var hit=0,side=0,n=0,lastx=mx,lasty=my;
+ while(!hit&&n<64){n++;lastx=mx;lasty=my;
+  if(sx<sy){sx+=ddx;mx+=stx;side=0}else{sy+=ddy;my+=sty;side=1}
+  hit=cell(mx,my);
+ }
+ var d=side===0?(sx-ddx):(sy-ddy);
+ return {d:d<0.0001?0.0001:d,t:hit,side:side,mx:mx,my:my,ex:lastx,ey:lasty};
+}
+function render(){
+ ${sky
+   ? "var g=x.createLinearGradient(0,0,0,H/2);g.addColorStop(0,'#2b3a55');g.addColorStop(1,'#5b7ea8');x.fillStyle=g;x.fillRect(0,0,W,H/2);x.fillStyle='#2a2620';x.fillRect(0,H/2,W,H/2);"
+   : "x.fillStyle='#1a1822';x.fillRect(0,0,W,H/2);x.fillStyle='#2a2620';x.fillRect(0,H/2,W,H/2);"}
+ var dirX=Math.cos(pa),dirY=Math.sin(pa),plX=-Math.sin(pa)*0.66,plY=Math.cos(pa)*0.66;
+ for(var sxp=0;sxp<W;sxp+=RES){
+  var cam=2*sxp/W-1;
+  var r=cast(Math.atan2(dirY+plY*cam,dirX+plX*cam));
+  var dist=r.d*Math.cos(Math.atan2(dirY+plY*cam,dirX+plX*cam)-pa);
+  if(dist<0.0001)dist=0.0001;
+  var h=Math.floor(H/dist),y0=Math.floor(H/2-h/2);
+  var base=PAL[(r.t-1)%PAL.length]||PAL[0];
+  ${shading ? "var f=(r.side?0.72:1)*Math.max(0.25,Math.min(1,1.6/(1+dist*0.28)));" : "var f=r.side?0.8:1;"}
+  x.fillStyle=shade(base,f);
+  x.fillRect(sxp,y0,RES,h);
+ }
+ ${canEdit ? "x.strokeStyle='rgba(255,255,255,.7)';x.beginPath();x.moveTo(W/2-5,H/2);x.lineTo(W/2+5,H/2);x.moveTo(W/2,H/2-5);x.lineTo(W/2,H/2+5);x.stroke();" : ''}
+ ${minimap ? "drawMap();" : ''}
+}
+${minimap ? `function drawMap(){
+ var m=document.getElementById('mm'),g=m.getContext('2d'),s=m.width/N;
+ g.fillStyle='#14131a';g.fillRect(0,0,m.width,m.height);
+ for(var b=0;b<N;b++)for(var a=0;a<N;a++){var v=cell(a,b);if(v){g.fillStyle=PAL[(v-1)%PAL.length]||PAL[0];g.fillRect(a*s,b*s,s,s)}}
+ g.fillStyle='#fff';g.beginPath();g.arc(px*s,py*s,2.5,0,7);g.fill();
+ g.strokeStyle='#fff';g.beginPath();g.moveTo(px*s,py*s);g.lineTo((px+Math.cos(pa))*s,(py+Math.sin(pa))*s);g.stroke();
+}` : ''}
+function move(f){
+ var nx=px+Math.cos(pa)*f,ny=py+Math.sin(pa)*f;
+ if(!cell(Math.floor(nx),Math.floor(py)))px=nx;
+ if(!cell(Math.floor(px),Math.floor(ny)))py=ny;
+}
+var keys={};
+document.addEventListener('keydown',function(e){keys[(e.key||'').toLowerCase()]=1;
+ if(['arrowup','arrowdown','arrowleft','arrowright',' '].indexOf((e.key||'').toLowerCase())>=0)e.preventDefault();
+ ${canEdit ? "if(e.key==='f')mine();if(e.key==='r')place();" : ''}
+ ${kinds > 1 ? "var n=parseInt(e.key,10);if(n>=1&&n<=KINDS){sel=n;document.getElementById('sel').textContent=sel}" : ''}
+});
+document.addEventListener('keyup',function(e){keys[(e.key||'').toLowerCase()]=0});
+Array.prototype.forEach.call(document.querySelectorAll('.pad button'),function(b){
+ var k=b.getAttribute('data-k');
+ b.addEventListener('mousedown',function(){keys[k]=1});b.addEventListener('mouseup',function(){keys[k]=0});
+ b.addEventListener('mouseleave',function(){keys[k]=0});
+ b.addEventListener('touchstart',function(e){e.preventDefault();keys[k]=1});
+ b.addEventListener('touchend',function(e){e.preventDefault();keys[k]=0});
+});
+${canEdit ? `function mine(){var r=cast(pa);if(r.d<4&&r.t){setCell(r.mx,r.my,0);placed=Math.max(0,placed-0);document.getElementById('bc').textContent=placed}}
+function place(){var r=cast(pa);if(r.d<4&&!cell(r.ex,r.ey)){setCell(r.ex,r.ey,sel);placed++;document.getElementById('bc').textContent=placed}}
+document.getElementById('mine').onclick=mine;document.getElementById('place').onclick=place;
+${kinds > 1 ? "document.getElementById('next').onclick=function(){sel=sel%KINDS+1;document.getElementById('sel').textContent=sel};" : ''}` : ''}
+function loop(){
+ if(keys['w']||keys['arrowup'])move(0.06);
+ if(keys['s']||keys['arrowdown'])move(-0.05);
+ if(keys['a']||keys['arrowleft'])pa-=0.045;
+ if(keys['d']||keys['arrowright'])pa+=0.045;
+ render();requestAnimationFrame(loop);
+}
+gen();loop();
+<\/script></body></html>`;
+  }
+
+  // A complete little website, built at four quality levels.
+  function buildWebsite(level) {
+    const nav      = level >= 3;
+    const features = level >= 2;
+    const extras   = level >= 4;   // testimonial, pricing, contact form
+    const footer   = level >= 2;
+    const toggle   = level >= 4;
+
+    return `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Northwind Studio</title><style>
+:root{--bg:#fbfaf7;--ink:#1f1d1a;--soft:#6b6459;--line:#e5e0d5;--card:#fff;--accent:#b3742c}
+[data-t="dark"]{--bg:#16151b;--ink:#eeeae1;--soft:#a49d92;--line:#312f39;--card:#1f1e26;--accent:#d99a4e}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,sans-serif;line-height:1.6}
+.wrap{max-width:880px;margin:0 auto;padding:0 22px}
+${nav ? `nav{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.navin{display:flex;align-items:center;gap:18px;max-width:880px;margin:0 auto;padding:14px 22px}
+.logo{font-weight:700;letter-spacing:-.02em;margin-right:auto}
+nav a{color:var(--soft);text-decoration:none;font-size:.92rem}
+nav a:hover{color:var(--ink)}
+.tbtn{background:none;border:1px solid var(--line);color:var(--soft);border-radius:999px;padding:5px 11px;font:inherit;font-size:.8rem;cursor:pointer}` : ''}
+header{padding:${extras ? '84px' : '56px'} 0 46px;text-align:center}
+h1{font-size:clamp(2rem,5.5vw,3.1rem);line-height:1.12;margin:0 0 14px;letter-spacing:-.03em}
+.lede{color:var(--soft);font-size:1.08rem;max-width:34rem;margin:0 auto 26px}
+.cta{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:11px 20px;font:inherit;font-weight:600;text-decoration:none;cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1px solid var(--line)}
+section{padding:40px 0;border-top:1px solid var(--line)}
+h2{font-size:1.4rem;margin:0 0 6px;letter-spacing:-.02em}
+.sub{color:var(--soft);margin:0 0 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.card h3{margin:0 0 6px;font-size:1.02rem}
+.card p{margin:0;color:var(--soft);font-size:.92rem}
+.dot{width:30px;height:30px;border-radius:9px;background:var(--accent);opacity:.9;margin-bottom:12px}
+${extras ? `.quote{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:12px;padding:22px;font-size:1.05rem}
+.quote span{display:block;margin-top:10px;color:var(--soft);font-size:.88rem}
+.price{text-align:center}
+.price .amt{font-size:2rem;font-weight:700;letter-spacing:-.02em}
+.price.hot{border-color:var(--accent)}
+form{display:grid;gap:10px;max-width:420px}
+input,textarea{font:inherit;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}
+.ok{color:var(--accent);font-weight:600}` : ''}
+${footer ? `footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--soft);font-size:.88rem;text-align:center}` : ''}
+</style></head><body>
+${nav ? `<nav><div class="navin"><span class="logo">Northwind Studio</span>
+<a href="#work">Work</a><a href="#about">About</a>${extras ? '<a href="#pricing">Pricing</a>' : ''}
+${toggle ? '<button class="tbtn" id="t">Dark</button>' : ''}</div></nav>` : ''}
+
+<header class="wrap">
+<h1>We build small things, carefully.</h1>
+<p class="lede">A studio for websites, tools and the occasional game. Replace this text with your own — it is all editable in the Code tab.</p>
+<div class="cta"><a class="btn" href="#work">See the work</a>${features ? '<a class="btn ghost" href="#about">About us</a>' : ''}</div>
+</header>
+
+${features ? `<section class="wrap" id="work"><h2>What we do</h2><p class="sub">Three things, done properly.</p>
+<div class="grid">
+<div class="card"><div class="dot"></div><h3>Websites</h3><p>Fast, readable pages that work on any screen and load in a blink.</p></div>
+<div class="card"><div class="dot"></div><h3>Tools</h3><p>Small apps that solve one problem well, without the clutter.</p></div>
+<div class="card"><div class="dot"></div><h3>Games</h3><p>Playable ideas — built in an afternoon, polished over a week.</p></div>
+</div></section>` : ''}
+
+${extras ? `<section class="wrap" id="about"><h2>What people say</h2><p class="sub">A kind word or two.</p>
+<div class="quote">"They shipped in a fortnight what we had been circling for a year."<span>— A happy client</span></div></section>
+
+<section class="wrap" id="pricing"><h2>Pricing</h2><p class="sub">Simple, no surprises.</p>
+<div class="grid">
+<div class="card price"><h3>Starter</h3><div class="amt">£0</div><p>One page, built by you in the Code tab.</p></div>
+<div class="card price hot"><h3>Studio</h3><div class="amt">£1,200</div><p>A full site, designed and built.</p></div>
+<div class="card price"><h3>Ongoing</h3><div class="amt">£300<small>/mo</small></div><p>Changes and care, month to month.</p></div>
+</div></section>
+
+<section class="wrap"><h2>Say hello</h2><p class="sub">This form is a demo — it does not send anywhere.</p>
+<form id="f"><input placeholder="Your name" required><input type="email" placeholder="Your email" required>
+<textarea rows="3" placeholder="What are you building?"></textarea>
+<div><button class="btn" type="submit">Send</button> <span id="ok" class="ok"></span></div></form></section>` : ''}
+
+${footer ? '<footer>© Northwind Studio — a template you can edit.</footer>' : ''}
+<script>
+${toggle ? "var t=document.getElementById('t');t.onclick=function(){var d=document.documentElement.getAttribute('data-t')==='dark';document.documentElement.setAttribute('data-t',d?'light':'dark');t.textContent=d?'Dark':'Light'};" : ''}
+${extras ? "var f=document.getElementById('f');f.onsubmit=function(e){e.preventDefault();document.getElementById('ok').textContent='Thanks! (demo only)';f.reset()};" : ''}
+document.querySelectorAll('a[href^=\\"#\\"]').forEach(function(a){a.onclick=function(e){var el=document.querySelector(a.getAttribute('href'));if(el){e.preventDefault();el.scrollIntoView({behavior:'smooth'})}}});
+<\/script></body></html>`;
+  }
+
+  const GAME_LIBRARY = [
+    { id: 'website', name: 'Website', build: buildWebsite,
+      match: /website|web ?site|web ?page|landing ?page|portfolio|homepage|a site\b/i,
+      controls: 'Scroll it, use the menu, and try the buttons — it is a live page.',
+      quality: {
+        4: 'Built full: sticky menu, hero, services, testimonial, pricing, a contact form, footer and a dark-mode toggle.',
+        3: 'Built medium: menu, hero, a services section and a footer.',
+        2: 'Built simple: hero, a short services list and a footer.',
+        1: 'Built bare: just a hero section.',
+      } },
+    { id: 'blockworld', name: 'Block World', build: buildBlockWorld,
+      // \b3-?d\b so dice notation like "3d10" is not mistaken for a 3D world.
+      match: /minecraft|mine ?craft|block ?world|blocks?\b|voxel|\b3-?d\b|first.?person/i,
+      controls: 'W/S or ▲▼ to walk, A/D or ◀▶ to turn, and Break/Place to edit the world.',
+      quality: {
+        4: 'Built at full detail: 5 block types, terrain, lighting and a minimap.',
+        3: 'Built at medium detail: 3 block types and terrain, no minimap.',
+        2: 'Built rough: one block type and flat shading.',
+        1: 'Built at the lowest detail — chunky, and you can only walk around.',
+      } },
+    { id: 'snake', name: 'Snake', html: G_SNAKE, match: /snake/i,
+      controls: 'Arrow keys, WASD, a swipe, or the on-screen pad.' },
+    { id: 'breakout', name: 'Breakout', html: G_BREAKOUT, match: /breakout|brick|breaker|paddle|pong|ball/i,
+      controls: 'Move the paddle with the mouse, your finger, or the arrow keys.' },
+    { id: 'memory', name: 'Memory Match', html: G_MEMORY, match: /memory|match|cards|concentration/i,
+      controls: 'Tap two cards to flip them and find the pairs.' },
+    { id: 'ttt', name: 'Tic-Tac-Toe', html: G_TTT, match: /tic.?tac|noughts|x.?s? and o.?s?/i,
+      controls: 'Tap a square — you are X, and the computer plays perfectly.' },
+  ];
+
+  let currentGameHtml = null;
+  let gameBuilt = false;
+
+  function formatSize(n) { return n < 1024 ? `${n} chars` : `${(n / 1024).toFixed(1)} KB`; }
+
+  function addBubble(role, text) {
+    const chat = document.getElementById('gm-chat');
+    const div = document.createElement('div');
+    div.className = `gm-message gm-message--${role}`;
+    div.textContent = text || '';
+    chat.appendChild(div);
+    div.scrollIntoView({ block: 'nearest' });
+    return div;
+  }
+
+  function setBusy(isBusy) {
+    document.getElementById('gm-submit').disabled = isBusy;
+    document.getElementById('gm-input').disabled = isBusy;
+    document.getElementById('gm-stop').hidden = !isBusy;
+  }
+  // Touch screens only: keep the game locked until tapped so swipes scroll the page.
+  const isTouch = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+
+  function lockGame(locked) {
+    const shield = document.getElementById('gm-shield');
+    const relock = document.getElementById('gm-relock');
+    if (!isTouch) { shield.hidden = true; relock.hidden = true; return; }
+    shield.hidden = !locked;
+    relock.hidden = locked;
+  }
+
+  function showBuildingOverlay(show) {
+    const stage = document.getElementById('gm-stage');
+    stage.classList.toggle('is-loading', show);
+    document.getElementById('gm-building').hidden = !show;
+    if (show) stage.hidden = false;
+  }
+  function compactHero() {
+    const hero = document.getElementById('hero');
+    hero.classList.add('is-compact');
+    hero.querySelector('h1').textContent = 'Assistant';
+    document.getElementById('gm-examples').hidden = true;
+    document.getElementById('gm-new').hidden = false;
+  }
+  // Clear the visible conversation area (does not touch which chat is active).
+  function resetChatUI() {
+    currentGameHtml = null;
+    currentGameName = null;
+    gameBuilt = false;
+    const hero = document.getElementById('hero');
+    hero.classList.remove('is-compact');
+    hero.querySelector('h1').textContent = 'What do you want to play?';
+    document.getElementById('gm-examples').hidden = false;
+    document.getElementById('gm-new').hidden = true;
+    document.getElementById('gm-chat').innerHTML = '';
+    const frame = document.getElementById('gm-frame');
+    frame.removeAttribute('srcdoc');
+    document.getElementById('gm-stage').hidden = true;
+    showBuildingOverlay(false);
+    document.getElementById('gm-status').textContent = '';
+    updateCode(null);
+    const input = document.getElementById('gm-input');
+    input.placeholder = 'Ask for a game… or type “help”';
+    input.focus();
+  }
+
+  function chatReset() {
+    activeChatId = null; // the old conversation stays in Chats
+    resetChatUI();
+    renderChatList();
+  }
+
+  /* ======================= OFFLINE CHATBOT ======================= */
+  // A small rule-based bot that runs entirely inside this page.
+  // No AI service, no network, no account, no usage — just plain JavaScript.
+
+  const JOKES = [
+    'Why do programmers prefer dark mode? Because light attracts bugs.',
+    'I told my computer I needed a break — now it will not stop sending me KitKats.',
+    'Why was the math book sad? It had too many problems.',
+    'What do you call a factory that makes okay products? A satisfactory.',
+    'Why did the scarecrow win an award? He was outstanding in his field.',
+  ];
+  const GREETINGS = ['Hey there! What can I do for you?', 'Hi! Ask me for a game, or try "help".', 'Hello! Want to play something?'];
+  const FALLBACKS = [
+    'I am only a small built-in bot, so I do not know that one. Try "help" to see what I can do.',
+    'That is past what I know — but I can load a game, do math, or tell a joke. Type "help".',
+    'Not sure about that one! Try asking me to play snake, or type "help".',
+  ];
+  const HELP_TEXT = [
+    'Here is what I can do:',
+    '',
+    'Build',
+    '• "make me a website"  •  "minecraft" (3D block world)',
+    '• "play snake", "breakout", "memory match", "tic-tac-toe"',
+    '• "surprise me" — I pick one',
+    '',
+    'Work things out',
+    '• Maths — "what is 12 * 7", "(4+5)*3"',
+    '• Percentages — "20% of 80"',
+    '• Convert — "10 km to miles", "20 c to f", "5 kg to lb"',
+    '• Count — "how many letters in banana"',
+    '',
+    'Everyday',
+    '• The time, today’s date, "what date is in 10 days", "how many days until christmas"',
+    '• "set a timer for 30 seconds"',
+    '• "flip a coin", "roll 2d6", "pick between tea or coffee"',
+    '• "tell me a joke" — then just say "another"',
+    '',
+    'I also remember your name if you tell me, and I understand small typos.',
+    'Once a game is loaded, the Code tab lets you edit it and press Run.',
+  ].join('\n');
+
+  /* ---------- modes: these really do change how the bot writes ---------- */
+  // A real capability ladder: level 4 is the best, level 1 is the most basic.
+  // (Placeholder names until you pick your own.)
+  const MODE_KEY = 'gamestudio:mode';
+  const MODE_TIERS = [
+    { id: 'epic',    name: 'Epic',    level: 4, blurb: 'the richest answers and the most detailed games' },
+    { id: 'ballad',  name: 'Ballad',  level: 3, blurb: 'balanced answers and solid games' },
+    { id: 'verse',   name: 'Verse',   level: 2, blurb: 'short answers and simpler games' },
+    { id: 'couplet', name: 'Couplet', level: 1, blurb: 'bare minimum — games, maths and the time only' },
+  ];
+  const OLD_MODE_IDS = { apex: 'epic', core: 'ballad', lite: 'verse', micro: 'couplet' };
+  let botMode = 'ballad';
+
+  function tierAbove() {
+    const i = MODE_TIERS.findIndex(m => m.id === botMode);
+    return i > 0 ? MODE_TIERS[i - 1].name : MODE_TIERS[0].name;
+  }
+
+  function tier() { return MODE_TIERS.find(m => m.id === botMode) || MODE_TIERS[1]; }
+  function lvl() { return tier().level; }
+  function tierLabel() { return tier().name + ' — ' + tier().blurb; }
+
+  function loadMode() {
+    try {
+      let m = localStorage.getItem(MODE_KEY);
+      if (m && OLD_MODE_IDS[m]) m = OLD_MODE_IDS[m]; // carry over the earlier names
+      if (m && MODE_TIERS.some(x => x.id === m)) botMode = m;
+    } catch (e) { /* keep default */ }
+  }
+  function saveMode() {
+    try { localStorage.setItem(MODE_KEY, botMode); } catch (e) { /* fine */ }
+  }
+
+  function pick(a) { return a[Math.floor(Math.random() * a.length)]; }
+
+  // Don't tell the same joke twice in a row.
+  let lastJoke = null;
+  function nextJoke() {
+    let j = pick(JOKES);
+    for (let i = 0; i < 8 && j === lastJoke && JOKES.length > 1; i++) j = pick(JOKES);
+    lastJoke = j;
+    return j;
+  }
+
+  // Handles plain sums and bracketed ones — "12 * 7", "(4+5)*3", "what is 2+2".
+  function tryMath(t) {
+    let s = String(t).toLowerCase()
+      .replace(/×/g, '*').replace(/÷/g, '/').replace(/\bx\b/g, '*')
+      .replace(/^(what|whats|what s|how much|calculate|compute|solve)\s+(is\s+)?/, '')
+      .replace(/[?=\s]+$/, '');
+
+    // Longest run that looks like arithmetic.
+    const cands = s.match(/[\d(][\d\s+\-*/%.()]*[\d)]/g);
+    if (!cands) return null;
+    let expr = cands.sort((a, b) => b.length - a.length)[0].trim();
+    if (!/[+\-*/%]/.test(expr) || !/\d/.test(expr)) return null;
+
+    // Drop unmatched brackets so a stray one cannot break it.
+    let open = 0, cleaned = '';
+    for (const ch of expr) {
+      if (ch === '(') open++;
+      else if (ch === ')') { if (open === 0) continue; open--; }
+      cleaned += ch;
+    }
+    expr = cleaned + ')'.repeat(open);
+    if (!/^[\d\s+\-*/%.()]+$/.test(expr)) return null;
+
+    try {
+      const v = Function('"use strict"; return (' + expr + ')')();
+      if (typeof v === 'number' && isFinite(v)) {
+        return { expr: expr.replace(/\s+/g, ' ').trim(), value: Math.round(v * 1e6) / 1e6 };
+      }
+    } catch (e) { /* not valid arithmetic */ }
+    return null;
+  }
+
+  // Keywords that should still find a game even when they are mistyped.
+  const GAME_WORDS = {
+    website: 'website', site: 'website', webpage: 'website', landing: 'website', portfolio: 'website',
+    minecraft: 'blockworld', block: 'blockworld', blocks: 'blockworld', voxel: 'blockworld', world: 'blockworld',
+    snake: 'snake',
+    breakout: 'breakout', bricks: 'breakout', brick: 'breakout', paddle: 'breakout', pong: 'breakout',
+    memory: 'memory', match: 'memory', cards: 'memory', concentration: 'memory',
+    tictactoe: 'ttt', noughts: 'ttt',
+  };
+
+  function findGame(t) {
+    for (const g of GAME_LIBRARY) if (g.match.test(t)) return g;
+    // Nothing matched exactly — allow small typos on any single word.
+    const words = t.split(/\s+/);
+    for (const w of words) {
+      const flat = w.replace(/[^a-z]/g, '');
+      if (flat.length < 4) continue;
+      for (const key in GAME_WORDS) {
+        if (closeTo(flat, key)) {
+          const id = GAME_WORDS[key];
+          const hit = GAME_LIBRARY.find(g => g.id === id);
+          if (hit) return hit;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Some games are generated at the quality of the tier you are on.
+  function gameHtml(game) {
+    return game.build ? game.build(lvl()) : game.html;
+  }
+
+  /* ---------- understanding helpers ---------- */
+  function norm(s) {
+    return s.toLowerCase().replace(/[^\w\s%+\-*/.():²³]/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Edit distance that also counts a swap as one slip, so "snak" and
+  // "sanke" both still find "snake".
+  function lev(a, b) {
+    const m = a.length, n = b.length;
+    if (!m || !n) return Math.max(m, n);
+    const d = Array.from({ length: m + 1 }, (_, i) => { const r = new Array(n + 1).fill(0); r[0] = i; return r; });
+    for (let j = 0; j <= n; j++) d[0][j] = j;
+    for (let i = 1; i <= m; i++) {
+      for (let j = 1; j <= n; j++) {
+        const c = a[i - 1] === b[j - 1] ? 0 : 1;
+        d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + c);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+          d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+        }
+      }
+    }
+    return d[m][n];
+  }
+  function closeTo(word, target) {
+    if (word === target) return true;
+    const d = lev(word, target);
+    return target.length >= 4 && d <= (target.length >= 7 ? 2 : 1);
+  }
+
+  const SUGGESTIONS = ['play snake', 'play breakout', 'memory match', 'tic tac toe', 'minecraft',
+    'make me a website', 'tell me a joke', 'flip a coin', 'roll a dice', 'what time is it',
+    'what is the date', 'convert 10 km to miles', 'set a timer for 30 seconds', 'help'];
+  function closestCommand(t) {
+    let best = null, bestD = Infinity;
+    for (const s of SUGGESTIONS) {
+      const d = lev(t.slice(0, 28), s.slice(0, 28));
+      if (d < bestD) { bestD = d; best = s; }
+    }
+    return bestD <= Math.max(4, Math.round(t.length * 0.45)) ? best : null;
+  }
+
+  /* ---------- things it remembers ---------- */
+  const MEM_KEY = 'gamestudio:memory';
+  let memory = { name: null };
+  let lastIntent = null;
+  function loadMemory() {
+    try { const r = localStorage.getItem(MEM_KEY); if (r) memory = Object.assign(memory, JSON.parse(r)); }
+    catch (e) { /* fine */ }
+  }
+  function saveMemory() {
+    try { localStorage.setItem(MEM_KEY, JSON.stringify(memory)); } catch (e) { /* fine */ }
+  }
+  function withName(s) { return memory.name ? s.replace(/!$/, ', ' + memory.name + '!') : s; }
+
+  /* ---------- small skills ---------- */
+  const UNITS = {
+    km:['len',1000], kilometre:['len',1000], kilometres:['len',1000], kilometer:['len',1000], kilometers:['len',1000],
+    m:['len',1], metre:['len',1], metres:['len',1], meter:['len',1], meters:['len',1],
+    cm:['len',0.01], mm:['len',0.001],
+    mi:['len',1609.344], mile:['len',1609.344], miles:['len',1609.344],
+    ft:['len',0.3048], foot:['len',0.3048], feet:['len',0.3048],
+    in:['len',0.0254], inch:['len',0.0254], inches:['len',0.0254],
+    kg:['mass',1], kilo:['mass',1], kilos:['mass',1], kilogram:['mass',1], kilograms:['mass',1],
+    g:['mass',0.001], gram:['mass',0.001], grams:['mass',0.001],
+    lb:['mass',0.45359237], lbs:['mass',0.45359237], pound:['mass',0.45359237], pounds:['mass',0.45359237],
+    oz:['mass',0.0283495], ounce:['mass',0.0283495], ounces:['mass',0.0283495],
+  };
+  const TEMPS = { c:1, celsius:1, centigrade:1, f:1, fahrenheit:1, k:1, kelvin:1 };
+  function round(n) { return Math.round(n * 10000) / 10000; }
+
+  function tryConvert(t) {
+    const m = t.match(/(-?\d+(?:\.\d+)?)\s*(?:degrees?\s*)?([a-z]+)\s*(?:to|in|into|as)\s*(?:degrees?\s*)?([a-z]+)/);
+    if (!m) return null;
+    const val = parseFloat(m[1]), from = m[2], to = m[3];
+    if (TEMPS[from] && TEMPS[to]) {
+      const f0 = from[0], t0 = to[0];
+      let c = f0 === 'c' ? val : f0 === 'f' ? (val - 32) * 5 / 9 : val - 273.15;
+      let out = t0 === 'c' ? c : t0 === 'f' ? c * 9 / 5 + 32 : c + 273.15;
+      return val + '°' + f0.toUpperCase() + ' is ' + round(out) + '°' + t0.toUpperCase() + '.';
+    }
+    const a = UNITS[from], b = UNITS[to];
+    if (a && b && a[0] === b[0]) return val + ' ' + from + ' is ' + round(val * a[1] / b[1]) + ' ' + to + '.';
+    return null;
+  }
+
+  function tryPercent(t) {
+    const m = t.match(/(-?\d+(?:\.\d+)?)\s*(?:%|percent)\s*(?:of)\s*(-?\d+(?:\.\d+)?)/);
+    if (!m) return null;
+    const p = parseFloat(m[1]), n = parseFloat(m[2]);
+    return m[1] + '% of ' + m[2] + ' is ' + round(p / 100 * n) + '.';
+  }
+
+  const HOLIDAYS = { christmas: [11, 25], xmas: [11, 25], halloween: [9, 31], 'new year': [0, 1], 'new years': [0, 1] };
+  function tryDates(t) {
+    let m = t.match(/(?:what|which)?\s*date\s*(?:is|will it be)?\s*in\s*(\d+)\s*(day|week|month)/);
+    if (m) {
+      const n = parseInt(m[1], 10), d = new Date();
+      if (m[2] === 'day') d.setDate(d.getDate() + n);
+      if (m[2] === 'week') d.setDate(d.getDate() + n * 7);
+      if (m[2] === 'month') d.setMonth(d.getMonth() + n);
+      return 'That would be ' + d.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '.';
+    }
+    m = t.match(/how many days (?:until|till|to)\s+(.+)/);
+    if (m) {
+      const key = m[1].replace(/[^a-z\s]/g, '').trim();
+      const h = HOLIDAYS[key];
+      if (!h) return null;
+      const now = new Date(); now.setHours(0, 0, 0, 0);
+      let target = new Date(now.getFullYear(), h[0], h[1]);
+      if (target < now) target = new Date(now.getFullYear() + 1, h[0], h[1]);
+      const days = Math.round((target - now) / 86400000);
+      return days === 0 ? 'It is today!' : days + ' day' + (days === 1 ? '' : 's') + ' until ' + m[1].trim() + '.';
+    }
+    return null;
+  }
+
+  function tryCount(t) {
+    const m = t.match(/how many (letters|characters|words)\s+(?:are\s+)?in\s+(.+)/);
+    if (!m) return null;
+    const what = m[1], s = m[2].replace(/^["']|["'?.]+$/g, '').trim();
+    if (what === 'words') return '"' + s + '" has ' + s.split(/\s+/).filter(Boolean).length + ' words.';
+    const n = what === 'letters' ? (s.match(/[a-z]/gi) || []).length : s.length;
+    return '"' + s + '" has ' + n + ' ' + what + '.';
+  }
+
+  function tryDice(t) {
+    let m = t.match(/roll\s*(\d*)\s*d\s*(\d+)/);
+    if (m) {
+      const n = Math.min(20, parseInt(m[1] || '1', 10) || 1), sides = Math.min(1000, parseInt(m[2], 10));
+      const rolls = Array.from({ length: n }, () => 1 + Math.floor(Math.random() * sides));
+      const sum = rolls.reduce((a, b) => a + b, 0);
+      return n === 1 ? 'You rolled a ' + sum + '.' : 'You rolled ' + rolls.join(', ') + ' — total ' + sum + '.';
+    }
+    m = t.match(/roll\s*(\d+)\s*dice/);
+    if (m) {
+      const n = Math.min(20, parseInt(m[1], 10));
+      const rolls = Array.from({ length: n }, () => 1 + Math.floor(Math.random() * 6));
+      return 'You rolled ' + rolls.join(', ') + ' — total ' + rolls.reduce((a, b) => a + b, 0) + '.';
+    }
+    return null;
+  }
+
+  function tryPick(t) {
+    const m = t.match(/(?:pick|choose|decide)(?:\s+between)?\s+(.+)/);
+    if (!m) return null;
+    const opts = m[1].split(/\s+or\s+|\s*,\s*/).map(s => s.replace(/[?.!]+$/, '').trim()).filter(Boolean);
+    if (opts.length < 2) return null;
+    return 'I pick: ' + pick(opts) + '.';
+  }
+
+  function tryTimer(t) {
+    const m = t.match(/(?:set\s+(?:a\s+)?timer|remind me|timer)\s*(?:for\s*)?(\d+)\s*(second|sec|minute|min|hour)/);
+    if (!m) return null;
+    const n = parseInt(m[1], 10);
+    const unit = m[2];
+    const ms = unit.startsWith('h') ? n * 3600000 : unit.startsWith('m') ? n * 60000 : n * 1000;
+    if (ms > 3600000) return 'I can only do timers up to an hour.';
+    const label = n + ' ' + unit + (n === 1 ? '' : 's');
+    setTimeout(function () {
+      const msg = '⏰ Time is up — that was your ' + label + ' timer.';
+      addBubble('ai', msg);
+      recordMessage('ai', msg);
+    }, ms);
+    return 'Timer set for ' + label + '. I will say so right here when it is done.';
+  }
+
+  function botReply(raw) {
+    const t = norm(raw);
+
+    // A game by name — "play snake", "breakout", "build me tic tac toe"
+    const game = findGame(t);
+    if (game && (/(play|open|start|launch|build|make|create|load|show|give|want|lets|let us)/.test(t) || t.split(/\s+/).length <= 4)) {
+      const L = lvl();
+      const q = game.quality ? ' ' + game.quality[L] : '';
+      let text;
+      if (L >= 4) {
+        text = 'Loading ' + game.name + ' now — it is playable just below.' + q + '\n\nControls: ' + game.controls
+          + '\n\nWant to change it? Open the Code tab, say "load my game", then try "make it faster" or "make it green".';
+      } else if (L === 3) {
+        text = 'Sure — loading ' + game.name + '.' + q + ' You can edit its code in the Code tab.';
+      } else {
+        text = 'Loading ' + game.name + '.' + q;
+      }
+      lastIntent = 'game';
+      return { text, game };
+    }
+
+    if (/^(mode|modes|model|which mode)/.test(t)) {
+      const list = MODE_TIERS.map(m => (m.id === botMode ? '▸ ' : '  ') + m.name + ' — ' + m.blurb).join('\n');
+      return { text: 'You are on ' + tierLabel() + '.\n\n' + list + '\n\nTop of the list is the most capable; they get more basic going down. Switch with the dropdown next to Send.' };
+    }
+
+    if (/^help$|what can you do|what do you do|commands/.test(t)) {
+      const L = lvl();
+      if (L === 1) return { text: tier().name + ' does: games ("play snake" or "minecraft"), maths, and the time. Switch up to ' + tierAbove() + ' for jokes, coin flips and dice.' };
+      if (L === 2) return { text: 'Games: "play snake", "breakout", "memory match", "tic-tac-toe". Also maths, the time, coin flip, dice, jokes.' };
+      if (L >= 4) return { text: HELP_TEXT + '\n\nYou are on the top tier, so I give the fullest answers I have.' };
+      return { text: HELP_TEXT };
+    }
+    // --- remembering you ---
+    let m = raw.match(/(?:my name is|call me|i am|i'm)\s+([A-Za-z][A-Za-z '-]{0,24})\s*$/i);
+    if (m && !/^(fine|good|ok|okay|great|tired|bored|here|back|sorry)$/i.test(m[1].trim())) {
+      memory.name = m[1].trim().replace(/\b\w/g, c => c.toUpperCase());
+      saveMemory();
+      return { text: 'Nice to meet you, ' + memory.name + '! I will remember that.' };
+    }
+    if (/what.*my name|who am i/.test(t)) {
+      return { text: memory.name ? 'You are ' + memory.name + '.' : 'You have not told me yet — say "my name is ..." and I will remember it.' };
+    }
+    if (/forget my name/.test(t)) { memory.name = null; saveMemory(); return { text: 'Forgotten.' }; }
+
+    // --- follow-ups: "another", "again", "one more" ---
+    if (/^(another|another one|again|one more|more|next)\b/.test(t) && lastIntent) {
+      if (lastIntent === 'joke') return { text: nextJoke() };
+      if (lastIntent === 'coin') return { text: 'I flipped again: ' + (Math.random() < 0.5 ? 'Heads!' : 'Tails!') };
+      if (lastIntent === 'dice') return { text: 'You rolled a ' + (1 + Math.floor(Math.random() * 6)) + '.' };
+      if (lastIntent === 'random') return { text: 'Here is another: ' + (1 + Math.floor(Math.random() * 100)) + '.' };
+      if (lastIntent === 'game') {
+        const g = pick(GAME_LIBRARY);
+        lastIntent = 'game';
+        return { text: 'How about ' + g.name + '? Loading it now.', game: g };
+      }
+    }
+
+    if (/surprise me|random game|any game|something fun/.test(t)) {
+      const g = pick(GAME_LIBRARY);
+      lastIntent = 'game';
+      return { text: 'Let us try ' + g.name + '.', game: g };
+    }
+
+    if (/\b(hi|hello|hey|yo|howdy|greetings|good morning|good evening)\b/.test(t)) return { text: withName(pick(GREETINGS)) };
+    if (/how are you|how.s it going|how are ya|you ok/.test(t)) return { text: 'Doing great, thanks for asking! How are you?' };
+    if (/your name|who are you|what are you/.test(t)) return { text: 'I am the built-in helper for this page. I run right here in your browser, so I am quick and private.' };
+    if (/thank/.test(t)) return { text: withName('You are very welcome!') };
+    if (/\b(bye|goodbye|see ya|later|good night)\b/.test(t)) return { text: withName('See you later!') };
+    if (/i.m (bored|sad|tired|happy)|how do i feel/.test(t)) {
+      return { text: 'Fancy a game? Say "surprise me" and I will pick one for you.' };
+    }
+    // The bottom tier genuinely does less — that is what makes the ladder real.
+    if (lvl() === 1 && /joke|make me laugh|funny|coin|heads or tails|dice|die\b|roll|random number/.test(t)) {
+      return { text: tier().name + ' does not cover that. Switch up to ' + tierAbove() + ' or higher and I will do it.' };
+    }
+
+    if (/joke|make me laugh|funny/.test(t)) { lastIntent = 'joke'; return { text: nextJoke() }; }
+    if (/what.*time|time is it|clock/.test(t)) return { text: 'It is ' + new Date().toLocaleTimeString() + '.' };
+
+    const dateAns = tryDates(t);
+    if (dateAns) return { text: dateAns };
+    if (/what.*date|what day|today/.test(t)) return { text: 'Today is ' + new Date().toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }) + '.' };
+
+    const timerAns = tryTimer(t);
+    if (timerAns) return { text: timerAns };
+
+    if (/coin|heads or tails/.test(t)) { lastIntent = 'coin'; return { text: 'I flipped a coin: ' + (Math.random() < 0.5 ? 'Heads!' : 'Tails!') }; }
+
+    const diceAns = tryDice(t);
+    if (diceAns) { lastIntent = 'dice'; return { text: diceAns }; }
+    if (/dice|die\b|roll/.test(t)) { lastIntent = 'dice'; return { text: 'You rolled a ' + (1 + Math.floor(Math.random() * 6)) + '.' }; }
+    if (/random number/.test(t)) { lastIntent = 'random'; return { text: 'Here is one: ' + (1 + Math.floor(Math.random() * 100)) + '.' }; }
+
+    const pickAns = tryPick(t);
+    if (pickAns) return { text: pickAns };
+
+    const convAns = tryConvert(t);
+    if (convAns) return { text: convAns };
+
+    const pctAns = tryPercent(t);
+    if (pctAns) return { text: pctAns };
+
+    const countAns = tryCount(t);
+    if (countAns) return { text: countAns };
+
+    const math = tryMath(t);
+    if (math) {
+      const L = lvl();
+      if (L === 1) return { text: String(math.value) };
+      if (L === 2) return { text: math.expr + ' = ' + math.value };
+      if (L >= 4) return { text: math.expr + ' = ' + math.value + '\n\n(Worked out right here in the page — nothing left your device.)' };
+      return { text: math.expr + ' = ' + math.value };
+    }
+
+    // Mentioned a game without an action word
+    if (game) return { text: 'I have ' + game.name + ' ready — say "play ' + game.name.toLowerCase() + '" and I will load it.', };
+
+    if (/game|build|make/.test(t)) {
+      return { text: 'I can build: a Website, a 3D Block World (Minecraft-style), Snake, Breakout, Memory Match, and Tic-Tac-Toe.\n\nSay "make me a website" or "play snake" and I will load it.' };
+    }
+
+    const L = lvl();
+    if (L === 1) return { text: 'No.' };
+
+    // Point at the nearest thing I do know rather than a dead end.
+    const guess = closestCommand(t);
+    if (L === 2) return { text: guess ? 'Not sure. Did you mean "' + guess + '"?' : 'Do not know that one. Try "help".' };
+    if (guess) {
+      return { text: 'I am not sure about that one.\n\nDid you mean "' + guess + '"? Type "help" to see everything I can do.' };
+    }
+    if (L >= 4) {
+      return { text: pick(FALLBACKS) + '\n\nI can do games, websites, maths, conversions, dates, timers, counting and coin flips. Type "help" for the full list.' };
+    }
+    return { text: pick(FALLBACKS) };
+  }
+
+  /* ======================= CHAT HISTORY ======================= */
+  const CHATS_KEY = 'gamestudio:chats';
+  const MAX_CHATS = 40;
+  let chats = [];
+  let activeChatId = null;
+
+  function loadChats() {
+    try { const r = localStorage.getItem(CHATS_KEY); chats = r ? JSON.parse(r) : []; }
+    catch (e) { chats = []; }
+    if (!Array.isArray(chats)) chats = [];
+  }
+  function persistChats() {
+    try { localStorage.setItem(CHATS_KEY, JSON.stringify(chats.slice(0, MAX_CHATS))); }
+    catch (e) { console.warn('Storage full or unavailable', e); }
+  }
+  function activeChat() { return chats.find(c => c.id === activeChatId) || null; }
+
+  function recordMessage(role, text) {
+    let chat = activeChat();
+    if (!chat) {
+      chat = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        title: text.length > 46 ? text.slice(0, 46) + '…' : text,
+        ts: Date.now(),
+        messages: [],
+        gameId: null,
+      };
+      chats.unshift(chat);
+      chats = chats.slice(0, MAX_CHATS);
+      activeChatId = chat.id;
+    }
+    // A tab opened with "+" starts as "New chat" — name it from the first thing said.
+    if (role === 'user' && chat.title === 'New chat') {
+      chat.title = text.length > 46 ? text.slice(0, 46) + '…' : text;
+    }
+    chat.messages.push({ role, text });
+    chat.ts = Date.now();
+    persistChats();
+    renderTabs();
+    renderChatList();
+  }
+  function recordGame(gameId) {
+    const chat = activeChat();
+    if (!chat) return;
+    chat.gameId = gameId;
+    persistChats();
+    renderChatList();
+  }
+
+  function chatTimeLabel(ts) {
+    const d = new Date(ts);
+    const today = new Date();
+    if (d.toDateString() === today.toDateString()) return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  }
+
+  function renderChatList() {
+    const list = document.getElementById('chat-list');
+    const empty = document.getElementById('chats-empty');
+    list.innerHTML = '';
+    empty.hidden = chats.length > 0;
+
+    for (const chat of chats) {
+      const li = document.createElement('li');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'chat-item';
+      if (chat.id === activeChatId) btn.setAttribute('aria-current', 'true');
+
+      const t = document.createElement('div');
+      t.className = 't';
+      const title = document.createElement('div');
+      title.className = 'title';
+      title.textContent = chat.title;
+      const sub = document.createElement('div');
+      sub.className = 'sub';
+      const g = chat.gameId ? (GAME_LIBRARY.find(x => x.id === chat.gameId) || {}).name : null;
+      sub.textContent = chatTimeLabel(chat.ts) + ' · ' + chat.messages.length + ' messages' + (g ? ' · ' + g : '');
+      t.append(title, sub);
+      btn.appendChild(t);
+      btn.addEventListener('click', () => openChat(chat.id));
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'chat-del';
+      del.textContent = 'Delete';
+      del.addEventListener('click', (e) => { e.stopPropagation(); deleteChat(chat.id); });
+
+      li.append(btn, del);
+      li.style.display = 'flex';
+      li.style.alignItems = 'center';
+      li.style.gap = '6px';
+      list.appendChild(li);
+    }
+  }
+
+  /* ---------- several chats open at once (tabs) ---------- */
+  const TABS_KEY = 'gamestudio:tabs';
+  let openTabs = [];
+
+  function loadTabs() {
+    try { const r = localStorage.getItem(TABS_KEY); openTabs = r ? JSON.parse(r) : []; }
+    catch (e) { openTabs = []; }
+    if (!Array.isArray(openTabs)) openTabs = [];
+    openTabs = openTabs.filter(id => chats.some(c => c.id === id));
+  }
+  function persistTabs() {
+    try { localStorage.setItem(TABS_KEY, JSON.stringify(openTabs)); }
+    catch (e) { console.warn('Storage full or unavailable', e); }
+  }
+
+  function renderTabs() {
+    const bar = document.getElementById('chat-tabs');
+    bar.innerHTML = '';
+    for (const id of openTabs) {
+      const chat = chats.find(c => c.id === id);
+      if (!chat) continue;
+      const tab = document.createElement('div');
+      tab.className = 'chat-tab' + (id === activeChatId ? ' active' : '');
+
+      const label = document.createElement('button');
+      label.type = 'button';
+      label.className = 'chat-tab-label';
+      label.textContent = chat.title.length > 22 ? chat.title.slice(0, 22) + '…' : chat.title;
+      label.title = chat.title;
+      label.addEventListener('click', () => openChat(id));
+
+      const close = document.createElement('button');
+      close.type = 'button';
+      close.className = 'chat-tab-close';
+      close.textContent = '×';
+      close.title = 'Close this chat';
+      close.setAttribute('aria-label', 'Close ' + chat.title);
+      close.addEventListener('click', (e) => { e.stopPropagation(); closeTab(id); });
+
+      tab.append(label, close);
+      bar.appendChild(tab);
+    }
+    const add = document.createElement('button');
+    add.type = 'button';
+    add.className = 'chat-tab-new';
+    add.textContent = '+';
+    add.title = 'Open another chat';
+    add.setAttribute('aria-label', 'Open another chat');
+    add.addEventListener('click', newChat);
+    bar.appendChild(add);
+  }
+
+  function newChat() {
+    const chat = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      title: 'New chat', ts: Date.now(), messages: [], gameId: null,
+    };
+    chats.unshift(chat);
+    chats = chats.slice(0, MAX_CHATS);
+    openTabs.push(chat.id);
+    activeChatId = chat.id;
+    persistChats(); persistTabs();
+    resetChatUI();
+    renderTabs(); renderChatList();
+    switchView('normal');
+  }
+
+  function closeTab(id) {
+    const i = openTabs.indexOf(id);
+    openTabs = openTabs.filter(x => x !== id);
+    persistTabs();
+    if (activeChatId === id) {
+      const next = openTabs[Math.min(i, openTabs.length - 1)];
+      if (next) { openChat(next); return; }
+      activeChatId = null;
+      resetChatUI();
+    }
+    renderTabs(); renderChatList();
+  }
+
+  function openChat(id) {
+    const chat = chats.find(c => c.id === id);
+    if (!chat) return;
+    activeChatId = id;
+
+    const chatEl = document.getElementById('gm-chat');
+    chatEl.innerHTML = '';
+    for (const m of chat.messages) addBubble(m.role, m.text);
+
+    const frame = document.getElementById('gm-frame');
+    const stage = document.getElementById('gm-stage');
+    const game = chat.gameId ? GAME_LIBRARY.find(g => g.id === chat.gameId) : null;
+    if (game) {
+      const html = gameHtml(game);
+      frame.srcdoc = html;
+      currentGameHtml = html;
+      currentGameName = game.name;
+      gameBuilt = true;
+      stage.hidden = false;
+      lockGame(true);
+    } else {
+      frame.removeAttribute('srcdoc');
+      currentGameHtml = null;
+      currentGameName = null;
+      gameBuilt = false;
+      stage.hidden = true;
+    }
+    updateCode(null); // Code tab starts clean; ask the assistant to load it.
+
+    // A brand-new empty chat keeps the full welcome; a used one collapses it.
+    if (chat.messages.length) {
+      compactHero();
+    } else {
+      const hero = document.getElementById('hero');
+      hero.classList.remove('is-compact');
+      hero.querySelector('h1').textContent = 'What do you want to play?';
+      document.getElementById('gm-examples').hidden = false;
+      document.getElementById('gm-new').hidden = true;
+    }
+
+    if (!openTabs.includes(id)) { openTabs.push(id); persistTabs(); }
+    renderTabs();
+    renderChatList();
+    switchView('normal');
+  }
+
+  function deleteChat(id) {
+    chats = chats.filter(c => c.id !== id);
+    openTabs = openTabs.filter(x => x !== id);
+    persistChats(); persistTabs();
+    if (activeChatId === id) {
+      activeChatId = null;
+      const next = openTabs[openTabs.length - 1];
+      if (next) { openChat(next); return; }
+      resetChatUI();
+    }
+    renderTabs();
+    renderChatList();
+  }
+
+  function chatInit() {
+    const form = document.getElementById('gm-form');
+    const input = document.getElementById('gm-input');
+    const status = document.getElementById('gm-status');
+    const submitBtn = document.getElementById('gm-submit');
+    const frame = document.getElementById('gm-frame');
+    const stage = document.getElementById('gm-stage');
+
+    // Replies are instant and local, so there is nothing to stop.
+    document.getElementById('gm-stop').hidden = true;
+
+    document.getElementById('gm-examples').addEventListener('click', (event) => {
+      const chip = event.target.closest('.example-chip');
+      if (!chip) return;
+      input.value = chip.textContent;
+      input.focus();
+    });
+
+    document.getElementById('gm-new').addEventListener('click', newChat);
+    document.getElementById('chats-new').addEventListener('click', newChat);
+    document.getElementById('gm-shield').addEventListener('click', () => lockGame(false));
+    document.getElementById('gm-relock').addEventListener('click', () => lockGame(true));
+
+    loadMode();
+    loadMemory();
+    const modeSel = document.getElementById('mode-select');
+    modeSel.value = botMode;
+    modeSel.addEventListener('change', () => {
+      botMode = modeSel.value;
+      saveMode();
+      addBubble('ai', 'Switched to ' + tierLabel() + '.');
+    });
+
+    input.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); }
+    });
+
+    loadChats();
+    loadTabs();
+    renderChatList();
+    // Restore whatever chats were open last time; otherwise start one.
+    if (openTabs.length) openChat(openTabs[openTabs.length - 1]);
+    else newChat();
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const message = input.value.trim();
+      if (!message) return;
+
+      compactHero();
+      addBubble('user', message);
+      recordMessage('user', message);
+      input.value = '';
+
+      const bubble = addBubble('ai', 'Typing…');
+      submitBtn.disabled = true;
+      input.disabled = true;
+      status.textContent = '';
+
+      const reply = botReply(message);
+
+      // A short beat so it reads like a reply rather than an instant snap.
+      setTimeout(() => {
+        bubble.textContent = reply.text;
+        recordMessage('ai', reply.text);
+        if (reply.game) {
+          const builtHtml = gameHtml(reply.game);
+          frame.srcdoc = builtHtml;
+          currentGameHtml = builtHtml;
+          currentGameName = reply.game.name;
+          // Deliberately NOT loaded into the Code tab — the code assistant
+          // only picks it up when you ask it to ("load my game").
+          gameBuilt = true;
+          stage.hidden = false;
+          lockGame(true);
+          stage.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          input.placeholder = 'Ask for another game, or anything else';
+          recordGame(reply.game.id);
+        }
+        submitBtn.disabled = false;
+        input.disabled = false;
+        input.focus();
+        bubble.scrollIntoView({ block: 'nearest' });
+      }, 320);
+    });
+  }
+  chatInit();
+</script>
+</body></html>
