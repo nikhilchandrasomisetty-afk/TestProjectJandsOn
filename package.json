@@ -1,0 +1,12 @@
+{
+  "name": "blockcraft",
+  "version": "1.0.0",
+  "description": "A tiny Minecraft-style voxel game built with Three.js",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "three": "^0.160.0"
+  }
+}
