@@ -1,0 +1,13 @@
+{
+  "name": "game-studio",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Game Studio — a build-anything assistant with a real AI brain behind it.",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.71.0"
+  }
+}

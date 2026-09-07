@@ -133,6 +133,8 @@
   .mode-select:hover { color: var(--ink); }
 
   .composer-status { flex: 1; font-family: "IBM Plex Mono", ui-monospace, monospace; font-variant-numeric: tabular-nums; font-size: 0.72rem; color: var(--ink-soft); }
+    .ai-badge { font-size: 12px; color: #3f9d63; background: rgba(63,157,99,.12);
+      border: 1px solid rgba(63,157,99,.35); border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
   .stop-btn { font-size: 0.82rem; color: var(--ink-soft); background: none; border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
   .stop-btn:hover { color: var(--ink); }
   .send-btn { font-weight: 600; font-size: 0.9rem; color: var(--accent-ink); background: var(--accent); border: none; border-radius: 10px; padding: 9px 18px; cursor: pointer; }
@@ -302,12 +304,13 @@
             <textarea id="gm-input" rows="1" placeholder="Ask for a tool, a game, or anything… type “help”" required></textarea>
             <div class="composer-footer">
               <select id="mode-select" class="mode-select" aria-label="Model"
-                      title="Best at the top, most basic at the bottom. These are tiers of the built-in bot, not different AIs.">
+                      title="Best at the top, most basic at the bottom.">
                 <option value="epic">Epic · best</option>
                 <option value="ballad" selected>Ballad</option>
                 <option value="verse">Verse</option>
                 <option value="couplet">Couplet · most basic</option>
               </select>
+              <span id="ai-badge" class="ai-badge" title="A real model is answering — your key, your server." hidden>● live AI</span>
               <span id="gm-status" class="composer-status" aria-live="polite"></span>
               <button id="gm-new" type="button" class="stop-btn" hidden>New chat</button>
               <button id="gm-stop" type="button" class="stop-btn" hidden>Stop</button>
@@ -1828,18 +1831,73 @@ document.getElementById('cl').onclick=function(){pat.forEach(function(r){r.fill(
     }
 
     const L = lvl();
-    if (L === 1) return { text: 'No.' };
+    if (L === 1) return { text: 'No.', weak: true };
 
     // Point at the nearest thing I do know rather than a dead end.
     const guess = closestCommand(t);
-    if (L === 2) return { text: guess ? 'Not sure. Did you mean "' + guess + '"?' : 'Do not know that one. Try "help".' };
+    if (L === 2) return { text: guess ? 'Not sure. Did you mean "' + guess + '"?' : 'Do not know that one. Try "help".', weak: true };
     if (guess) {
-      return { text: 'I am not sure about that one.\n\nDid you mean "' + guess + '"? Type "help" to see everything I can do.' };
+      return { text: 'I am not sure about that one.\n\nDid you mean "' + guess + '"? Type "help" to see everything I can do.', weak: true };
     }
     if (L >= 4) {
-      return { text: pick(FALLBACKS) + '\n\nI can do games, websites, maths, conversions, dates, timers, counting and coin flips. Type "help" for the full list.' };
+      return { text: pick(FALLBACKS) + '\n\nI can do games, websites, maths, conversions, dates, timers, counting and coin flips. Type "help" for the full list.', weak: true };
     }
-    return { text: pick(FALLBACKS) };
+    return { text: pick(FALLBACKS), weak: true };
+  }
+
+  /* ======================= REAL AI (when the server is running) =======================
+     Opened as a plain file, everything below is inert and the built-in bot answers,
+     exactly as before. Started with "npm start", the page finds the little server
+     next to it, which holds the API key and does the thinking. The key stays on the
+     server — it is never sent to the browser. */
+  const AI = { on: false, model: null };
+
+  async function aiProbe() {
+    try {
+      const res = await fetch('api/status', { cache: 'no-store' });
+      if (!res.ok) return;
+      const data = await res.json();
+      AI.on = Boolean(data.ai);
+      AI.model = data.model || null;
+      if (AI.on) markAiOn();
+    } catch (e) { /* no server — the built-in bot handles everything */ }
+  }
+
+  function markAiOn() {
+    const badge = document.getElementById('ai-badge');
+    if (badge) badge.hidden = false;
+  }
+
+  // Ask the server. Returns the reply text, or null so the caller can fall back.
+  async function aiAsk(message) {
+    const chat = activeChat();
+    const history = (chat ? chat.messages : [])
+      .filter(m => m && m.text)
+      .slice(-19)
+      .map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.text }));
+    // recordMessage already stored this turn's message; make sure it is last.
+    if (!history.length || history[history.length - 1].content !== message) {
+      history.push({ role: 'user', content: message });
+    }
+    while (history.length && history[0].role !== 'user') history.shift();
+
+    try {
+      const res = await fetch('api/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ messages: history, tier: lvl() }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (data.error === 'bad_key') return 'The server rejected that API key — check the key in your .env file, then restart it.';
+        if (data.error === 'rate_limited') return 'That was a lot at once — give it a few seconds and ask me again.';
+        AI.on = res.status !== 503;
+        return null;
+      }
+      return typeof data.text === 'string' ? data.text : null;
+    } catch (e) {
+      return null; // server went away mid-conversation — quietly go back to the built-in bot
+    }
   }
 
   /* ======================= CHAT HISTORY ======================= */
@@ -2101,6 +2159,7 @@ document.getElementById('cl').onclick=function(){pat.forEach(function(r){r.fill(
     document.getElementById('gm-shield').addEventListener('click', () => lockGame(false));
     document.getElementById('gm-relock').addEventListener('click', () => lockGame(true));
 
+    aiProbe();
     loadMode();
     loadMemory();
     const modeSel = document.getElementById('mode-select');
@@ -2139,10 +2198,9 @@ document.getElementById('cl').onclick=function(){pat.forEach(function(r){r.fill(
 
       const reply = botReply(message);
 
-      // A short beat so it reads like a reply rather than an instant snap.
-      setTimeout(() => {
-        bubble.textContent = reply.text;
-        recordMessage('ai', reply.text);
+      const finish = (text) => {
+        bubble.textContent = text;
+        recordMessage('ai', text);
         if (reply.game) {
           const builtHtml = gameHtml(reply.game);
           frame.srcdoc = builtHtml;
@@ -2161,7 +2219,18 @@ document.getElementById('cl').onclick=function(){pat.forEach(function(r){r.fill(
         input.disabled = false;
         input.focus();
         bubble.scrollIntoView({ block: 'nearest' });
-      }, 320);
+      };
+
+      // Games and the things the page can answer itself stay instant and offline.
+      if (!AI.on || !reply.weak) {
+        // A short beat so it reads like a reply rather than an instant snap.
+        setTimeout(() => finish(reply.text), 320);
+        return;
+      }
+
+      // Otherwise hand it to the real model behind the server.
+      bubble.textContent = 'Thinking…';
+      aiAsk(message).then((text) => finish(text || reply.text));
     });
   }
   chatInit();
